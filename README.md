@@ -1,4 +1,4 @@
-# CSE 325 Group Project - CSE325-Group1
+# CSE 325 Group Project - ServeTrack
 
 A .NET Blazor web application developed as a group project for CSE 325 at BYU-Idaho.
 
