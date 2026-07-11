@@ -5,6 +5,17 @@ A .NET Blazor web application developed as a group project for CSE 325 at BYU-Id
 ## Group
 - Group Name: CSE325 Group1
 
+## Team Members
+- Blake Wayne Ostler
+- Robert Yamashita
+- Dereck Romero Moscoso
+- Samuel Jericho Revillo Gomez
+- Gideon Komla Agbavor
+- Solomon Kusasira
+- Mukendji Josaphat Ngandu
+- Sophia Akwero
+- Godfred Sefa Aboagye
+
 ## Tech Stack
 - .NET Blazor
 - ASP.NET Core
