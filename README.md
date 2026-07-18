@@ -1,4 +1,4 @@
-# CSE 325 Group Project - ServeTrack
+# CSE 325 Group Project - ChefConnect
 
 A .NET Blazor web application developed as a group project for CSE 325 at BYU-Idaho.
 
