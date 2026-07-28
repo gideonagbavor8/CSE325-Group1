@@ -109,4 +109,13 @@ app.MapRazorComponents<App>()
 // incoming HTTP requests.
 // ===========================================================
 //
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ChefConnectContext>();
+    DbInitializer.Initialize(context);
+}
+
+
 app.Run();
