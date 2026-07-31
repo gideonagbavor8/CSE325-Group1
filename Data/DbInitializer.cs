@@ -13,7 +13,7 @@
  * ===========================================================
  */
 
-
+using ChefConnect.Data;
 using ChefConnect.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +26,7 @@ namespace ChefConnect.Data
     /// </summary>
     public static class DbInitializer
     {
-        public static void Initialize(ChefConnectContext context)
+        public static void Initialize(ApplicationDbContext context)
         {
             // Using Migrate() instead of EnsureCreated() so that schema changes
             // are tracked through EF Core migrations. EnsureCreated() only creates
@@ -44,22 +44,22 @@ namespace ChefConnect.Data
             // -----------------------------
             // Seed Users
             // -----------------------------
-            var users = new User[]
+            var users = new ApplicationUser[]
             {
-                new User
+                new ApplicationUser
                 {
                     FirstName = "Godfred",
                     LastName = "Aboagye",
-                    Username = "gsefa",
+                    UserName = "gsefa",
                     Email = "gsefa@example.com",
                     PasswordHash = "DemoPasswordHash"
                 },
 
-                new User
+                new ApplicationUser
                 {
                     FirstName = "Kamohelo",
                     LastName = "Mejaele",
-                    Username = "kmejaele",
+                    UserName = "kmejaele",
                     Email = "kamohelo@example.com",
                     PasswordHash = "DemoPasswordHash"
                 }

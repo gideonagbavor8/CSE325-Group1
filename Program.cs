@@ -23,18 +23,7 @@ using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//
-// ===========================================================
-// Register the ChefConnect database context.
-//
-// This enables Entity Framework Core to communicate with the
-// SQL Server database using the connection string stored in
-// appsettings.json.
-//
-// Dependency Injection allows the database context to be
-// accessed throughout the application whenever needed.
-// ===========================================================
-//
+
 // 1. Add Database Connection (SQLite)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Data Source=app.db";
@@ -42,9 +31,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
 
 
-builder.Services.AddDbContext<ChefConnectContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("ChefConnectContext")));
+// builder.Services.AddDbContext<ChefConnectContext>(options =>
+//     options.UseSqlServer(
+//         builder.Configuration.GetConnectionString("ChefConnectContext")));
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
@@ -135,7 +124,7 @@ app.UseAntiforgery();
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ChefConnectContext>();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     DbInitializer.Initialize(context);
 }
 
