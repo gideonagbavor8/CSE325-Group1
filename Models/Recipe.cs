@@ -13,7 +13,7 @@
  * ===========================================================
  */
 
-
+// using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
 namespace ChefConnect.Models
@@ -90,12 +90,9 @@ namespace ChefConnect.Models
         /// <summary>
         /// Foreign key linking the recipe to the user who created it.
         /// </summary>
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Navigation property to the recipe's author.
-        /// </summary>
-        public User? User { get; set; }
+        public ApplicationUser? User { get; set; }
 
         /// <summary>
         /// Foreign key linking the recipe to a category.
