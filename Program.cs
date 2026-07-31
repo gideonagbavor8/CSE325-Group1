@@ -19,6 +19,7 @@
 using ChefConnect.Components;
 using ChefConnect.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,10 +35,20 @@ var builder = WebApplication.CreateBuilder(args);
 // accessed throughout the application whenever needed.
 // ===========================================================
 //
+// 1. Add Database Connection (SQLite)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Data Source=app.db";
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(connectionString));
+
+
 builder.Services.AddDbContext<ChefConnectContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("ChefConnectContext")));
-
+builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
 //
 // ===========================================================
 // Register Blazor Server services.
@@ -48,7 +59,15 @@ builder.Services.AddDbContext<ChefConnectContext>(options =>
 //
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+    })
+    .AddIdentityCookies();
 
+builder.Services.AddAuthorizationCore();
 //
 // ===========================================================
 // Build the application.
@@ -109,6 +128,9 @@ app.MapRazorComponents<App>()
 // incoming HTTP requests.
 // ===========================================================
 //
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseAntiforgery();
 
 
 using (var scope = app.Services.CreateScope())
