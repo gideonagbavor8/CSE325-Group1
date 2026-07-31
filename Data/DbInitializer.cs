@@ -13,8 +13,9 @@
  * ===========================================================
  */
 
-
+using ChefConnect.Data;
 using ChefConnect.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChefConnect.Data
 {
@@ -25,10 +26,14 @@ namespace ChefConnect.Data
     /// </summary>
     public static class DbInitializer
     {
-        public static void Initialize(ChefConnectContext context)
+        public static void Initialize(ApplicationDbContext context)
         {
-            // Create the database if it doesn't exist.
-            context.Database.EnsureCreated();
+            // Using Migrate() instead of EnsureCreated() so that schema changes
+            // are tracked through EF Core migrations. EnsureCreated() only creates
+            // the database if it doesn't already exist and cannot apply future
+            // schema changes. Migrate() allows the team to evolve the database
+            // (e.g., adding new fields or tables) without losing existing data.
+            context.Database.Migrate();
 
             // If data already exists, stop here.
             if (context.Users.Any())
@@ -39,22 +44,22 @@ namespace ChefConnect.Data
             // -----------------------------
             // Seed Users
             // -----------------------------
-            var users = new User[]
+            var users = new ApplicationUser[]
             {
-                new User
+                new ApplicationUser
                 {
                     FirstName = "Godfred",
                     LastName = "Aboagye",
-                    Username = "gsefa",
+                    UserName = "gsefa",
                     Email = "gsefa@example.com",
                     PasswordHash = "DemoPasswordHash"
                 },
 
-                new User
+                new ApplicationUser
                 {
                     FirstName = "Kamohelo",
                     LastName = "Mejaele",
-                    Username = "kmejaele",
+                    UserName = "kmejaele",
                     Email = "kamohelo@example.com",
                     PasswordHash = "DemoPasswordHash"
                 }
