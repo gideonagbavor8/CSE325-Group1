@@ -15,6 +15,7 @@
 
 
 using ChefConnect.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChefConnect.Data
 {
@@ -27,8 +28,12 @@ namespace ChefConnect.Data
     {
         public static void Initialize(ChefConnectContext context)
         {
-            // Create the database if it doesn't exist.
-            context.Database.EnsureCreated();
+            // Using Migrate() instead of EnsureCreated() so that schema changes
+            // are tracked through EF Core migrations. EnsureCreated() only creates
+            // the database if it doesn't already exist and cannot apply future
+            // schema changes. Migrate() allows the team to evolve the database
+            // (e.g., adding new fields or tables) without losing existing data.
+            context.Database.Migrate();
 
             // If data already exists, stop here.
             if (context.Users.Any())
