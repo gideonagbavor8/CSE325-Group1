@@ -244,6 +244,9 @@ csx/
 ecf/
 rcf/
 
+# SQLite database files
+*.db
+
 # Windows Store app package directories and files
 AppPackages/
 BundleArtifacts/
