@@ -1,0 +1,97 @@
+@page "/register"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<h3>Create Account</h3>
+
+<EditForm Model="registerModel" OnValidSubmit="HandleRegister" FormName="RegisterForm">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label>First Name</label>
+        <InputText Name="FirstName"
+                   class="form-control"
+                   @bind-Value="registerModel.FirstName" />
+    </div>
+
+    <div class="mb-3">
+        <label>Last Name</label>
+        <InputText Name="LastName"
+                   class="form-control"
+                   @bind-Value="registerModel.LastName" />
+    </div>
+
+    <div class="mb-3">
+        <label>Email</label>
+        <InputText Name="Email"
+                   class="form-control"
+                   @bind-Value="registerModel.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText
+                   type="password"
+                   class="form-control"
+                   @bind-Value="registerModel.Password" />
+    </div>
+
+    <button class="btn btn-primary" type="submit">
+        Register
+    </button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info mt-3">
+        @message
+    </div>
+}
+
+@code {
+    private RegisterModel registerModel = new();
+    private string? message;
+
+    private async Task HandleRegister()
+    {
+
+    var user = new ApplicationUser
+    {
+        UserName = registerModel.Email,
+        Email = registerModel.Email,
+        FirstName = registerModel.FirstName,
+        LastName = registerModel.LastName,
+        CreatedAt = DateTime.Now
+    };
+
+    var result = await UserManager.CreateAsync(user, registerModel.Password);
+
+    if (result.Succeeded)
+    {
+        message = "Account created successfully. You can now log in.";
+    }
+    else
+    {
+        foreach (var error in result.Errors)
+
+        message = string.Join(", ", result.Errors.Select(e => e.Description));
+    }
+}
+
+    private class RegisterModel
+    {
+        public string FirstName { get; set; } = string.Empty;
+
+        public string LastName { get; set; } = string.Empty;
+
+        public string Email { get; set; } = string.Empty;
+
+        public string Password { get; set; } = string.Empty;
+    }
+}
+
