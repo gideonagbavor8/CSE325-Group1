@@ -21,6 +21,7 @@ using ChefConnect.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using ChefConnect.Components.Account;
+using System.Linq.Expressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,8 +37,6 @@ var builder = WebApplication.CreateBuilder(args);
 // accessed throughout the application whenever needed.
 // ===========================================================
 //
-var chefConnectConnectionString = builder.Configuration.GetConnectionString("ChefConnectContext") ?? "Data Source=chefconnect.db";
-builder.Services.AddDbContext<ChefConnectContext>(options=>options.UseSqlite(chefConnectConnectionString));
 builder.Services.AddScoped<RecipeService>();
 
 // 1. Add Database Connection (SQLite)
@@ -156,6 +155,5 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     DbInitializer.Initialize(context);
 }
-
 
 app.Run();

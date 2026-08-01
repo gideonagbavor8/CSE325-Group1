@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class RecipeService
 {
-    private readonly ChefConnectContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public RecipeService(ChefConnectContext context)
+    public RecipeService(ApplicationDbContext context)
     {
         _context = context;
     }
