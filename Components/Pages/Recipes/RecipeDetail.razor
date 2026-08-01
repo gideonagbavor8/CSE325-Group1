@@ -1,0 +1,38 @@
+@page "/recipes/{Id:int}"
+@inject RecipeService RecipeService
+
+@if (Recipe is null)
+{
+    <p>Recipe not found.</p>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
+    {
+        <img class="recipe-image" src="@Recipe.ImageUrl" alt="@Recipe.Name" />
+    }
+    else{
+        <div class="recipe-image-placeholder">No photo</div>
+    }
+    <h1 class="recipe-detail-name">@Recipe.Name</h1>
+    <p class="recipe-detail-description">@Recipe.Description</p>
+    <p class="recipe-detail-servings">Servings: @Recipe.Servings</p>
+    <p class="recipe-detail-preptime">Prep. Time: @Recipe.PreparationTime minutes</p>
+    <p class="recipe-detail-cooktime">Cook Time: @Recipe.CookingTime minutes</p>
+    <p class="recipe-detail-ingredients">Ingredients: @Recipe.Ingredients</p>
+    <p class="recipe-detail-instructions">Instructions: @Recipe.Instructions</p>
+}
+
+@code
+{
+    @* Create the recipeID parameter based on which recipe the user clicked *@
+    [Parameter]
+    public int Id {get; set;}
+    private Recipe? Recipe;
+    @* Use the RecipeService to get recipe by ID based on which recipe the user clicked *@
+    @* Suggested by Copilot for pages driven by route parameters *@
+    protected override async Task OnParametersSetAsync()
+    {
+        Recipe = await RecipeService.GetRecipeByIdAsync(Id);
+    }
+}

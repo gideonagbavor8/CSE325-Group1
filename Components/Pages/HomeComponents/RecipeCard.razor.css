@@ -1,0 +1,27 @@
+.recipe-card {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.recipe-card:hover {
+  transform: translate(-2px);
+}
+
+.recipe-image {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.recipe-image-placeholder {
+    text-align: center;
+    padding: 1rem;
+}
+
+.watch-emoji{
+    font-size: 21px;
+}

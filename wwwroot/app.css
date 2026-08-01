@@ -1,5 +1,16 @@
+:root {
+    --coral: #EE6055;
+    --green: #60D394;
+    --light-green: #AAF683;
+    --sun-yellow: #FFD97D;
+    --peach: #FF9B85;
+    --black: #000000;
+    --body-text: 'Cabin', sas-serif;
+    --header-text: 'Candal', 'Cabin', system-ui, sans-serif;
+}
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--body-text);
 }
 
 a, .btn-link {
@@ -58,3 +69,97 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Got help from Copilot for this styling */
+
+header {
+    background: linear-gradient(to right, #60D394, #AAF683); /* Copilot helped with this styling */
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo layout */
+.chefconnect-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.chefconnect-logo-img {
+    height: 80px;   /* adjust as needed */
+    width: auto;
+}
+
+/* Logo text */
+.chefconnect-logo-text {
+    font-family: var(--header-text);
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    color: var(--black);
+}
+
+.chefconnect-logo:hover .chefconnect-logo-text {
+    color: var(--coral); /* coral accent on hover */
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.navbar-item {
+    padding: 0.25rem 0.5rem;
+    color: var(--black);
+    font-family: var(--body-text);
+    font-size: 1.5rem;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.navbar-item:hover {
+    color: var(--coral);
+}
+
+.navbar-item.active {
+    color: var(--coral);
+}
+
+.site-footer {
+    background-color: #F9F9F9;
+    padding: 1.25rem 1.5rem;
+    border-top: 4px solid var(--coral);
+    display: flex;
+    justify-content: center;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: var(--body-text);
+    color: #474854;
+}
+
+.footer-brand {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--coral);
+}
+
+.footer-copy {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.recipe-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+

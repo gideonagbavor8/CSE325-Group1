@@ -1,14 +1,10 @@
 ﻿@page "/"
+@using ChefConnect.Components.Pages.HomeComponents
 
 @using Microsoft.AspNetCore.Components.Authorization
 @* @inject AuthenticationStateProvider AuthStateProvider *@
 
-<h3>Home</h3>
-
-<p>
-    Welcome!
-</p>
-
-@code {
-    
-}
+<HeroSection />
+<SearchBar />
+<FilterBar />
+<RecipeList />
