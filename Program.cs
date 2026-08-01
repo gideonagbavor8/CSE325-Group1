@@ -45,10 +45,6 @@ var defaultConnectionString = builder.Configuration.GetConnectionString("Default
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(defaultConnectionString));
 
-
-// builder.Services.AddDbContext<ChefConnectContext>(options =>
-//     options.UseSqlServer(
-//         builder.Configuration.GetConnectionString("ChefConnectContext")));
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -73,6 +69,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
@@ -116,9 +113,6 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 // Redirect all HTTP requests to HTTPS.
 app.UseHttpsRedirection();
 
-// Protect against Cross-Site Request Forgery (CSRF) attacks.
-app.UseAntiforgery();
-
 // Serve CSS, JavaScript, images, and other static assets.
 app.MapStaticAssets();
 
@@ -133,9 +127,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-
-app.MapLoginEndpoint();
-app.MapLogoutEndpoint();
+app.MapAdditionalIdentityEndpoints();
 
 //
 // ===========================================================
@@ -147,13 +139,18 @@ app.MapLogoutEndpoint();
 //
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseAntiforgery();
 
+// Protect against Cross-Site Request Forgery (CSRF) attacks.
+// Called once, the UseAntiforgery() call earlier
+// caused the form to be read twice, which threw
+// "invalid anti-forgery token" on every POST.
+app.UseAntiforgery();
 
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    DbInitializer.Initialize(context);
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    await DbInitializer.InitializeAsync(context, userManager);
 }
 
 app.Run();

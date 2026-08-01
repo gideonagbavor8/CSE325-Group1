@@ -16,6 +16,7 @@
 using ChefConnect.Data;
 using ChefConnect.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace ChefConnect.Data
 {
@@ -26,7 +27,11 @@ namespace ChefConnect.Data
     /// </summary>
     public static class DbInitializer
     {
-        public static void Initialize(ApplicationDbContext context)
+        // Temp password for the seeded accounts (Identity's default complexity rules).
+        //  Users set their own password through /Register endpoint.
+        private const string TempPass = "Passw0rd!";
+
+        public static async Task InitializeAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             // Using Migrate() instead of EnsureCreated() so that schema changes
             // are tracked through EF Core migrations. EnsureCreated() only creates
@@ -44,29 +49,36 @@ namespace ChefConnect.Data
             // -----------------------------
             // Seed Users
             // -----------------------------
+            // Created with UserManager (not inserted directly) so passwords are
+            //  properly hashed and the normalized username/email fields Identity
+            //  relies on for login are populated correctly.
             var users = new ApplicationUser[]
             {
                 new ApplicationUser
                 {
                     FirstName = "Godfred",
                     LastName = "Aboagye",
-                    UserName = "gsefa",
+                    UserName = "gsefa@example.com",
                     Email = "gsefa@example.com",
-                    PasswordHash = "DemoPasswordHash"
                 },
 
                 new ApplicationUser
                 {
                     FirstName = "Kamohelo",
                     LastName = "Mejaele",
-                    UserName = "kmejaele",
+                    UserName = "kamohelo@example.com",
                     Email = "kamohelo@example.com",
-                    PasswordHash = "DemoPasswordHash"
                 }
             };
 
-            context.Users.AddRange(users);
-            context.SaveChanges();
+            foreach (var user in users)
+            {
+                var result = await userManager.CreateAsync(user, TempPass);
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException($"Failed to seed user {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+            }
 
             // -----------------------------
             // Seed Categories
