@@ -1,0 +1,17 @@
+@inject RecipeService RecipeService
+
+<div class="recipe-grid">
+    @foreach (var recipe in Recipes)
+    {
+        <RecipeCard Recipe="recipe" />
+    }
+</div>
+
+@code
+{
+    private List<Recipe> Recipes = new();
+    protected override async Task OnInitializedAsync()
+    {
+        Recipes = await RecipeService.GetAllRecipesAsync();
+    }
+}

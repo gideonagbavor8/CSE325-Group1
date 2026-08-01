@@ -1,0 +1,27 @@
+<NavLink class="recipe-card-link" href="@($"/recipes/{Recipe.Id}")">
+    <div class="recipe-card">
+        @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
+        {
+            <img class="recipe-image" src="@Recipe.ImageUrl" alt="@Recipe.Name" />
+        }
+        else{
+            <div class="recipe-image-placeholder">No photo</div>
+        }
+        <div class="recipe-card-content">
+            <h3 class="recipe-title">@Recipe.Name</h3>
+            <p class="recipe-servings">Servings: @Recipe.Servings</p>
+            <p class="recipe-time"><span class="watch-emoji">◔</span> @time minutes</p>
+        </div>
+    </div>
+</NavLink>
+
+@code {
+    [Parameter]
+    public Recipe Recipe {get; set;} = default!;
+
+    private int time;
+    protected override void OnParametersSet()
+    {
+        time = Recipe.PreparationTime + Recipe.CookingTime;
+    }
+}

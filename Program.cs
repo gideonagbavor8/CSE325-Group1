@@ -34,9 +34,9 @@ var builder = WebApplication.CreateBuilder(args);
 // accessed throughout the application whenever needed.
 // ===========================================================
 //
-builder.Services.AddDbContext<ChefConnectContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("ChefConnectContext")));
+var connectionString = builder.Configuration.GetConnectionString("ChefConnectContext") ?? "Data Source=chefconnect.db";
+builder.Services.AddDbContext<ChefConnectContext>(options=>options.UseSqlite(connectionString));
+builder.Services.AddScoped<RecipeService>();
 
 //
 // ===========================================================
