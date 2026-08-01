@@ -1,0 +1,13 @@
+@if (!string.IsNullOrEmpty(DisplayMessage))
+{
+    string? statusMessageClass = DisplayMessage.StartsWith(value: "Error") ? "danger" : "success";
+    <div class="alert alert-@statusMessageClass" role="alert">
+        @DisplayMessage
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+    private string? DisplayMessage => Message;
+}

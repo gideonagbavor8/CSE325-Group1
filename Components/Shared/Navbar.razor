@@ -1,5 +1,29 @@
+@using Microsoft.AspNetCore.Components.Authorization
+
 <nav class="navbar">
-    <NavLink href="/login" class="navbar-item">
-        My ChefConnect
-    </NavLink>
+    <AuthorizeView>
+        <Authorized>
+            <NavLink href="recipes" class="navbar-item">
+                Recipes
+            </NavLink>
+            <NavLink href="profile" class="navbar-item">
+                @(context.User.Identity?.Name?.Split(separator: '@')?[0])'s profile
+            </NavLink>
+            <form action="Account/Logout" method="post">
+                <AntiforgeryToken />
+                <input type="hidden" name="returnUrl" value="" />
+                <button type="submit" class="navbar-item" style="border:none; background:none; cursor:pointer;">
+                    Logout
+                </button>
+            </form>
+        </Authorized>
+        <NotAuthorized>
+            <NavLink href="Account/Register" class="navbar-item">
+                Register
+            </NavLink>
+            <NavLink href="Account/Login" class="navbar-item">
+                My ChefConnect
+            </NavLink>
+        </NotAuthorized>
+    </AuthorizeView>
 </nav>
