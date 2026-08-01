@@ -19,6 +19,8 @@
 using ChefConnect.Components;
 using ChefConnect.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using ChefConnect.Components.Account;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,10 +36,33 @@ var builder = WebApplication.CreateBuilder(args);
 // accessed throughout the application whenever needed.
 // ===========================================================
 //
-var connectionString = builder.Configuration.GetConnectionString("ChefConnectContext") ?? "Data Source=chefconnect.db";
-builder.Services.AddDbContext<ChefConnectContext>(options=>options.UseSqlite(connectionString));
+var chefConnectConnectionString = builder.Configuration.GetConnectionString("ChefConnectContext") ?? "Data Source=chefconnect.db";
+builder.Services.AddDbContext<ChefConnectContext>(options=>options.UseSqlite(chefConnectConnectionString));
 builder.Services.AddScoped<RecipeService>();
 
+// 1. Add Database Connection (SQLite)
+var defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Data Source=app.db";
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(defaultConnectionString));
+
+
+// builder.Services.AddDbContext<ChefConnectContext>(options =>
+//     options.UseSqlServer(
+//         builder.Configuration.GetConnectionString("ChefConnectContext")));
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false;
+
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 6;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddSignInManager()
+.AddDefaultTokenProviders();
 //
 // ===========================================================
 // Register Blazor Server services.
@@ -48,7 +73,15 @@ builder.Services.AddScoped<RecipeService>();
 //
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+    })
+    .AddIdentityCookies();
 
+builder.Services.AddAuthorizationCore();
 //
 // ===========================================================
 // Build the application.
@@ -101,6 +134,10 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+
+app.MapLoginEndpoint();
+app.MapLogoutEndpoint();
+
 //
 // ===========================================================
 // Start the ChefConnect application.
@@ -109,11 +146,14 @@ app.MapRazorComponents<App>()
 // incoming HTTP requests.
 // ===========================================================
 //
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseAntiforgery();
 
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ChefConnectContext>();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     DbInitializer.Initialize(context);
 }
 
