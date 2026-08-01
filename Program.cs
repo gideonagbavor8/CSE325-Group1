@@ -20,6 +20,7 @@ using ChefConnect.Components;
 using ChefConnect.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using ChefConnect.Components.Account;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,10 +35,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // builder.Services.AddDbContext<ChefConnectContext>(options =>
 //     options.UseSqlServer(
 //         builder.Configuration.GetConnectionString("ChefConnectContext")));
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false;
+
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 6;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddSignInManager()
+.AddDefaultTokenProviders();
 //
 // ===========================================================
 // Register Blazor Server services.
@@ -108,6 +118,10 @@ app.MapStaticAssets();
 //
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+
+app.MapLoginEndpoint();
+app.MapLogoutEndpoint();
 
 //
 // ===========================================================
