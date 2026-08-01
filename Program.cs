@@ -35,8 +35,18 @@ var builder = WebApplication.CreateBuilder(args);
 // ===========================================================
 //
 builder.Services.AddDbContext<ChefConnectContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("ChefConnectContext")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("ChefConnectContext");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.UseSqlite(connectionString);
+    }
+    else
+    {
+        options.UseSqlServer(connectionString);
+    }
+});
 
 //
 // ===========================================================
@@ -58,6 +68,12 @@ builder.Services.AddRazorComponents()
 // ===========================================================
 //
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ChefConnectContext>();
+    DbInitializer.Initialize(context);
+}
 
 //
 // ===========================================================
