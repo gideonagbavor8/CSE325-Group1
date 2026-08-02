@@ -1,10 +1,127 @@
 ﻿@page "/"
-@using ChefConnect.Components.Pages.HomeComponents
+@rendermode InteractiveServer
+@using ChefConnect.Data
+@using ChefConnect.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
 
-@using Microsoft.AspNetCore.Components.Authorization
-@* @inject AuthenticationStateProvider AuthStateProvider *@
+<h1>Find a recipe</h1>
 
-<HeroSection />
-<SearchBar />
-<FilterBar />
-<RecipeList />
+<div class="row g-3 mb-4" role="search">
+	<div class="col-md-8">
+		<label for="recipe-search" class="form-label">Search by recipe name</label>
+		<input id="recipe-search" class="form-control" type="search" placeholder="Try pancakes or rice..."
+			   @bind="searchText" @bind:event="oninput" />
+	</div>
+	<div class="col-md-4">
+		<label for="category-filter" class="form-label">Category</label>
+		<select id="category-filter" class="form-select" @bind="selectedCategoryId">
+			<option value="">All categories</option>
+			@foreach (var category in categories)
+			{
+				<option value="@category.Id">@category.Name</option>
+			}
+		</select>
+	</div>
+</div>
+
+<h2 class="h4 mb-3">Browse by meal</h2>
+<div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
+	@if (ShouldShowMealCard("Breakfast"))
+	{
+		<div class="col">
+			<article class="card h-100 shadow-sm" role="button" tabindex="0"
+				 @onclick='() => SelectMealCategory("Breakfast")'>
+				<img src="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=80"
+					 class="card-img-top" alt="Breakfast with eggs, avocado, and toast" />
+				<div class="card-body">
+					<h3 class="h5 card-title">Breakfast</h3>
+					<p class="card-text">Start your day with something delicious.</p>
+				</div>
+			</article>
+		</div>
+	}
+	@if (ShouldShowMealCard("Lunch"))
+	{
+		<div class="col">
+			<article class="card h-100 shadow-sm" role="button" tabindex="0"
+				 @onclick='() => SelectMealCategory("Lunch")'>
+				<img src="https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=80"
+					 class="card-img-top" alt="Toasted sandwich for lunch" />
+				<div class="card-body">
+					<h3 class="h5 card-title">Lunch</h3>
+					<p class="card-text">Find a satisfying midday favorite.</p>
+				</div>
+			</article>
+		</div>
+	}
+</div>
+
+@if (recipes is null)
+{
+	<p><em>Loading recipes...</em></p>
+}
+else if (!FilteredRecipes.Any())
+{
+	<p class="text-muted">No recipes match your search.</p>
+}
+else
+{
+	<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+		@foreach (var recipe in FilteredRecipes)
+		{
+			<div class="col">
+				<article class="card h-100 shadow-sm">
+					<div class="card-body">
+						<h2 class="h5 card-title">@recipe.Name</h2>
+						<p class="card-text">@recipe.Description</p>
+						<span class="badge text-bg-secondary">@(recipe.Category?.Name ?? "Uncategorized")</span>
+					</div>
+				</article>
+			</div>
+		}
+	</div>
+}
+
+@code {
+	private List<Recipe>? recipes;
+	private List<Category> categories = new();
+	private string searchText = string.Empty;
+	private string selectedCategoryId = string.Empty;
+
+	private bool ShouldShowMealCard(string mealName) =>
+		string.IsNullOrWhiteSpace(searchText) ||
+		mealName.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+
+	private void SelectMealCategory(string categoryName)
+	{
+		var category = categories.FirstOrDefault(item =>
+			item.Name.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
+
+		selectedCategoryId = category?.Id.ToString() ?? string.Empty;
+	}
+
+	private IEnumerable<Recipe> FilteredRecipes =>
+		recipes?.Where(recipe =>
+			(string.IsNullOrWhiteSpace(searchText) ||
+			 recipe.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+			 recipe.Category?.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true) &&
+			(string.IsNullOrEmpty(selectedCategoryId) ||
+			 recipe.CategoryId.ToString() == selectedCategoryId))
+		?? Enumerable.Empty<Recipe>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		categories = await DbContext.Categories
+			.AsNoTracking()
+			.OrderBy(category => category.Name)
+			.ToListAsync();
+
+		recipes = await DbContext.Recipes
+			.AsNoTracking()
+			.Include(recipe => recipe.Category)
+			.OrderBy(recipe => recipe.Name)
+			.ToListAsync();
+	}
+}
+

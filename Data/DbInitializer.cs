@@ -108,6 +108,7 @@ namespace ChefConnect.Data
                     PreparationTime = 10,
                     CookingTime = 15,
                     Servings = 4,
+                    ImageUrl = "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=80",
                     UserId = users[0].Id,
                     CategoryId = categories[0].Id
                 },
@@ -121,6 +122,7 @@ namespace ChefConnect.Data
                     PreparationTime = 20,
                     CookingTime = 45,
                     Servings = 6,
+                    ImageUrl = "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=80",
                     UserId = users[1].Id,
                     CategoryId = categories[2].Id
                 }
