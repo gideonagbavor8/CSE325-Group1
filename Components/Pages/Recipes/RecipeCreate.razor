@@ -1,0 +1,94 @@
+@page "/recipes/create"
+@rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject RecipeService RecipeService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<h3>Create Recipe</h3>
+
+<EditForm Model="recipe" OnValidSubmit="HandleSubmit" FormName="CreateRecipeForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <InputText class="form-control" @bind-Value="recipe.Name" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <InputTextArea class="form-control" @bind-Value="recipe.Description" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Category</label>
+        <InputSelect class="form-control" @bind-Value="recipe.CategoryId">
+            <option value="0">Select Category...</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category.Id">@category.Name</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Ingredients</label>
+        <InputTextArea class="form-control" @bind-Value="recipe.Ingredients" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Instructions</label>
+        <InputTextArea class="form-control" @bind-Value="recipe.Instructions" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Preparation Time (mins)</label>
+        <InputNumber class="form-control" @bind-Value="recipe.PreparationTime" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Cooking Time (mins)</label>
+        <InputNumber class="form-control" @bind-Value="recipe.CookingTime" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Servings</label>
+        <InputNumber class="form-control" @bind-Value="recipe.Servings" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Image URL</label>
+        <InputText class="form-control" @bind-Value="recipe.ImageUrl" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="/recipes" class="btn btn-secondary">Cancel</a>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    private Recipe recipe { get; set; } = new();
+    private List<Category> categories = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await RecipeService.GetCategoriesAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            recipe.UserId = userId;
+        }
+
+        await RecipeService.AddRecipeAsync(recipe);
+        NavigationManager.NavigateTo("/recipes", forceLoad: true);
+    }
+}
