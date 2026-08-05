@@ -1,5 +1,6 @@
 @page "/recipes/{Id:int}"
 @inject RecipeService RecipeService
+@inject NavigationManager NavigationManager
 
 @if (Recipe is null)
 {
@@ -11,7 +12,8 @@ else
     {
         <img class="recipe-image" src="@Recipe.ImageUrl" alt="@Recipe.Name" />
     }
-    else{
+    else
+    {
         <div class="recipe-image-placeholder">No photo</div>
     }
     <h1 class="recipe-detail-name">@Recipe.Name</h1>
@@ -21,18 +23,31 @@ else
     <p class="recipe-detail-cooktime">Cook Time: @Recipe.CookingTime minutes</p>
     <p class="recipe-detail-ingredients">Ingredients: @Recipe.Ingredients</p>
     <p class="recipe-detail-instructions">Instructions: @Recipe.Instructions</p>
+
+    <div class="mt-3">
+        <a href="/recipes/edit/@Recipe.Id" class="btn btn-warning">Edit</a>
+        <button class="btn btn-danger" @onclick="DeleteRecipe">Delete</button>
+        <a href="/recipes" class="btn btn-secondary">Back to List</a>
+    </div>
 }
 
 @code
 {
-    @* Create the recipeID parameter based on which recipe the user clicked *@
     [Parameter]
-    public int Id {get; set;}
+    public int Id { get; set; }
     private Recipe? Recipe;
-    @* Use the RecipeService to get recipe by ID based on which recipe the user clicked *@
-    @* Suggested by Copilot for pages driven by route parameters *@
+
     protected override async Task OnParametersSetAsync()
     {
         Recipe = await RecipeService.GetRecipeByIdAsync(Id);
     }
-}
+
+    private async Task DeleteRecipe()
+    {
+        if (Recipe != null)
+        {
+            await RecipeService.DeleteRecipeAsync(Recipe.Id);
+            NavigationManager.NavigateTo("/recipes", forceLoad: true);
+        }
+    }
+}NavigationManager.NavigateTo("/recipes");
