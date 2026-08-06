@@ -1,0 +1,127 @@
+@page "/profile"
+@using System.Security.Claims
+@using ChefConnect.Components.Pages.HomeComponents
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@inject RecipeService RecipeService
+@inject AuthenticationStateProvider AuthStateProvider
+
+
+<div class="profile-page">
+    @if (currentUser is null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        <div class="profile-header">
+            @if (!string.IsNullOrWhiteSpace(currentUser.ProfileImage))
+            {
+                <img class="profile-avatar" src="@currentUser.ProfileImage" alt="@currentUser.FirstName" />
+            }
+            else
+            {
+                <div class="profile-avatar profile-avatar-placeholder">
+                    @currentUser.FirstName.Substring(startIndex: 0, length: 1)@currentUser.LastName.Substring(startIndex: 0, length: 1)
+                </div>
+            }
+            <div>
+                <h1>@currentUser.FirstName @currentUser.LastName</h1>
+                <p class="profile-email">@currentUser.Email</p>
+                <p class="profile-since">Cooking since @currentUser.CreatedAt.ToString(format: "MMMM yyyy")</p>
+            </div>
+        </div>
+
+        <div class="profile-tabs">
+            <button class="profile-tab @(activeTab == "recipes" ? "active" : "")" @onclick='() => activeTab = "recipes"'>
+                My Recipes (@myRecipes.Count)
+            </button>
+            <button class="profile-tab @(activeTab == "favorites" ? "active" : "")" @onclick='() => activeTab = "favorites"'>
+                Favorites (@favoriteRecipes.Count)
+            </button>
+        </div>
+
+        <div class="profile-tab-content">
+            @if (activeTab == "recipes")
+            {
+                @if (!myRecipes.Any())
+                {
+                    <p>You haven't created any recipes yet. <a href="/recipes/create">Create one</a>.</p>
+                }
+                else
+                {
+                    <div class="recipe-grid">
+                        @foreach (var recipe in myRecipes)
+                        {
+                            <RecipeCard Recipe="recipe" ShowFavoriteButton="true" IsFavorite="favoriteIds.Contains(recipe.Id)" OnToggleFavorite="ToggleFavorite" />
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                @if (!favoriteRecipes.Any())
+                {
+                    <p>You haven't favorited any recipes yet. <a href="/recipes">Browse recipes</a>.</p>
+                }
+                else
+                {
+                    <div class="recipe-grid">
+                        @foreach (var recipe in favoriteRecipes)
+                        {
+                            <RecipeCard Recipe="recipe" ShowFavoriteButton="true" IsFavorite="true" OnToggleFavorite="ToggleFavorite" />
+                        }
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+
+
+@code {
+    private ApplicationUser? currentUser;
+    private string? userId;
+    private string activeTab = "recipes";
+    private List<Recipe> myRecipes = new List<Recipe>();
+    private List<Recipe> favoriteRecipes = new List<Recipe>();
+    private HashSet<int> favoriteIds = new HashSet<int>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState? authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        ClaimsPrincipal? user = authState.User;
+        userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            currentUser     = await RecipeService.GetUserByIdAsync(userId);
+            myRecipes       = await RecipeService.GetRecipesByUserAsync(userId);
+            favoriteRecipes = await RecipeService.GetFavoriteRecipesAsync(userId);
+            favoriteIds     = favoriteRecipes.Select(r => r.Id).ToHashSet();
+        }
+    }
+
+    private async Task ToggleFavorite(Recipe recipe)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return;
+        }
+
+        bool nowFavorite = await RecipeService.ToggleFavoriteAsync(userId, recipe.Id);
+
+        if (nowFavorite)
+        {
+            favoriteIds.Add(recipe.Id);
+        }
+        else
+        {
+            favoriteIds.Remove(recipe.Id);
+        }
+
+        favoriteRecipes = await RecipeService.GetFavoriteRecipesAsync(userId);
+    }
+}

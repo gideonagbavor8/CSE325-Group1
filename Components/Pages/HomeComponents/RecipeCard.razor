@@ -1,3 +1,7 @@
+@using System.Security.Claims
+@inject RecipeService RecipeService
+@inject AuthenticationStateProvider AuthStateProvider
+
 <NavLink class="recipe-card-link" href="@($"/recipes/{Recipe.Id}")">
     <article class="recipe-card">
         @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
@@ -10,7 +14,13 @@
         <div class="recipe-card-content">
             <h3 class="recipe-title">@Recipe.Name</h3>
             <p class="recipe-servings">Servings: @Recipe.Servings</p>
-            <p class="recipe-time"><span class="watch-emoji">◔</span> @time minutes</p>
+            <p class="recipe-time"><span class="watch-emoji">⏱</span> @time minutes</p>
+            @if (ShowFavoriteButton)
+            {
+                <button type="button" class="favorite-btn @(IsFavorite ? "is-favorite" : "")" title="@(IsFavorite ? "Remove from favorites" : "Add to favorites")" @onclick="HandleToggle" @onclick:stopPropagation="true">
+                    @(IsFavorite ? "♥" : "♡")
+                </button>
+            }
         </div>
     </article>
 </NavLink>
@@ -19,9 +29,33 @@
     [Parameter]
     public Recipe Recipe {get; set;} = default!;
 
+    // Whether the current viewer is logged in
+    //  parent already knows this, fetched once
+    //  per page load rather than once per card
+    [Parameter]
+    public bool ShowFavoriteButton { get; set; }
+
+    // Whether recipe is already favorited by the user
+    [Parameter]
+    public bool IsFavorite { get; set; }
+
+    // Parent owns the actual DB call
+    //  the card just reports which recipe was clicked
+    [Parameter]
+    public EventCallback<Recipe> OnToggleFavorite { get; set; }
+
     private int time;
+
     protected override void OnParametersSet()
     {
         time = Recipe.PreparationTime + Recipe.CookingTime;
+    }
+
+    private async Task HandleToggle()
+    {
+        if (OnToggleFavorite.HasDelegate)
+        {
+            await OnToggleFavorite.InvokeAsync(Recipe);
+        }
     }
 }

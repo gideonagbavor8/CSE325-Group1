@@ -1,13 +1,21 @@
 .recipe-card {
+  position: relative;
   margin: 1rem 0;
+}
+
+.recipe-card-link {
+  display: block;
   padding: 1rem;
   background: white;
   border: 1px solid #ddd;
   cursor: pointer;
   border-radius: 10px;
+
+  text-decoration: none;
+  color: inherit;
 }
 
-.recipe-card:hover {
+.recipe-card-link:hover {
   transform: translate(-2px);
 }
 
@@ -24,4 +32,34 @@
 
 .watch-emoji{
     font-size: 21px;
+}
+
+.favorite-btn {
+  position: absolute;
+  display: flex;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 1;
+  font-size: 1.25rem;
+
+  color: #999;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+
+  cursor: pointer;
+}
+
+.favorite-btn.is-favorite {
+  color: #e0245e;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
 }
