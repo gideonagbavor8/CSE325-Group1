@@ -1,6 +1,9 @@
 @page "/recipes/{Id:int}"
+@rendermode InteractiveServer
+@using System.Security.Claims
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
 
 @if (Recipe is null)
 {
@@ -28,6 +31,12 @@ else
         <a href="/recipes/edit/@Recipe.Id" class="btn btn-warning">Edit</a>
         <button class="btn btn-danger" @onclick="DeleteRecipe">Delete</button>
         <a href="/recipes" class="btn btn-secondary">Back to List</a>
+        @if (isAuthenticated)
+        {
+            <button class="btn @(isFavorite ? "btn-outline-danger" : "btn-outline-secondary")" @onclick="ToggleFavorite">
+                @(isFavorite ? "♥ Favorited" : "♡ Favorite")
+            </button>
+        }
     </div>
 }
 
@@ -36,10 +45,26 @@ else
     [Parameter]
     public int Id { get; set; }
     private Recipe? Recipe;
+    private string? userId;
+    private bool isAuthenticated;
+    private bool isFavorite;
 
     protected override async Task OnParametersSetAsync()
     {
         Recipe = await RecipeService.GetRecipeByIdAsync(Id);
+
+        AuthenticationState? authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        ClaimsPrincipal? user = authState.User;
+        isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                isFavorite = await RecipeService.IsFavoriteAsync(userId, Id);
+            }
+        }
     }
 
     private async Task DeleteRecipe()
@@ -50,4 +75,14 @@ else
             NavigationManager.NavigateTo("/recipes", forceLoad: true);
         }
     }
-}NavigationManager.NavigateTo("/recipes");
+
+    private async Task ToggleFavorite()
+    {
+        if (string.IsNullOrEmpty(userId) || Recipe is null)
+        {
+            return;
+        }
+
+        isFavorite = await RecipeService.ToggleFavoriteAsync(userId, Recipe.Id);
+    }
+}

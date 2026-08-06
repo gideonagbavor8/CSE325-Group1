@@ -14,10 +14,29 @@ namespace ChefConnect.Data
         public DbSet<Recipe> Recipes { get; set; } = default!;
 
         public DbSet<Category> Categories { get; set; } = default!;
-
+        public DbSet<Favorite> Favorites { get; set; } = default!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // User's favorite recipes.
+            modelBuilder.Entity<Favorite>()
+                .HasOne(f => f.User)
+                .WithMany(u => u.Favorites)
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Favorited recipe
+            modelBuilder.Entity<Favorite>()
+                .HasOne(f => f.Recipe)
+                .WithMany()
+                .HasForeignKey(f => f.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // User can only favorite recipes once
+            modelBuilder.Entity<Favorite>()
+                .HasIndex(f => new { f.UserId, f.RecipeId })
+                .IsUnique();
 
             modelBuilder.Entity<ApplicationUser>()
                 .HasMany(u => u.Recipes)

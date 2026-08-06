@@ -12,4 +12,6 @@ public class ApplicationUser : IdentityUser
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
+
+    public ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
 }
