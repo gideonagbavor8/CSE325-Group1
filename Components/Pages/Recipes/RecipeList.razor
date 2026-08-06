@@ -1,7 +1,9 @@
 @page "/recipes"
 @rendermode InteractiveServer
+@using System.Security.Claims
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
 
 <h3>Recipes</h3>
 
@@ -39,6 +41,12 @@ else
                         <a href="/recipes/@recipe.Id" class="btn btn-info btn-sm">View</a>
                         <a href="/recipes/edit/@recipe.Id" class="btn btn-warning btn-sm">Edit</a>
                         <button class="btn btn-danger btn-sm" @onclick="() => DeleteRecipe(recipe.Id)">Delete</button>
+                        @if (isAuthenticated)
+                        {
+                            <button class="btn btn-sm @(favoriteIds.Contains(recipe.Id) ? "btn-outline-danger" : "btn-outline-secondary")" @onclick="() => ToggleFavorite(recipe.Id)">
+                                @(favoriteIds.Contains(recipe.Id) ? "♥ Favorited" : "♡ Favorite")
+                            </button>
+                        }
                     </td>
                 </tr>
             }
@@ -48,15 +56,49 @@ else
 
 @code {
     private List<Recipe>? recipes;
+    private string? userId;
+    private bool isAuthenticated;
+    private HashSet<int> favoriteIds = new HashSet<int>();
 
     protected override async Task OnInitializedAsync()
     {
         recipes = await RecipeService.GetAllRecipesAsync();
+
+        AuthenticationState? authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        ClaimsPrincipal? user = authState.User;
+        isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                favoriteIds = await RecipeService.GetFavoriteRecipeIdsAsync(userId);
+            }
+        }
     }
 
     private async Task DeleteRecipe(int id)
     {
         await RecipeService.DeleteRecipeAsync(id);
         recipes = await RecipeService.GetAllRecipesAsync();
+    }
+
+    private async Task ToggleFavorite(int recipeId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return;
+        }
+
+        bool nowFavorite = await RecipeService.ToggleFavoriteAsync(userId, recipeId);
+        if (nowFavorite)
+        {
+            favoriteIds.Add(recipeId);
+        }
+        else
+        {
+            favoriteIds.Remove(recipeId);
+        }
     }
 }
