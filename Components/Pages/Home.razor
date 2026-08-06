@@ -1,5 +1,6 @@
 ﻿@page "/"
 @rendermode InteractiveServer
+@using ChefConnect.Components.Pages.HomeComponents
 @using ChefConnect.Data
 @using ChefConnect.Models
 @using Microsoft.EntityFrameworkCore
@@ -71,13 +72,7 @@ else
 		@foreach (var recipe in FilteredRecipes)
 		{
 			<div class="col">
-				<article class="card h-100 shadow-sm">
-					<div class="card-body">
-						<h2 class="h5 card-title">@recipe.Name</h2>
-						<p class="card-text">@recipe.Description</p>
-						<span class="badge text-bg-secondary">@(recipe.Category?.Name ?? "Uncategorized")</span>
-					</div>
-				</article>
+				<RecipeCard Recipe="@recipe" />
 			</div>
 		}
 	</div>

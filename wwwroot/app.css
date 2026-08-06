@@ -13,6 +13,10 @@ html, body {
     font-family: var(--body-text);
 }
 
+.main-content {
+    margin: 1.5rem;
+}
+
 a, .btn-link {
     color: #006bb7;
 }

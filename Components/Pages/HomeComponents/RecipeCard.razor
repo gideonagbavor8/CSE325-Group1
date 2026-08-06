@@ -2,8 +2,8 @@
 @inject RecipeService RecipeService
 @inject AuthenticationStateProvider AuthStateProvider
 
-<div class="recipe-card">
-    <NavLink class="recipe-card-link" href="@($"/recipes/{Recipe.Id}")">
+<NavLink class="recipe-card-link" href="@($"/recipes/{Recipe.Id}")">
+    <article class="recipe-card">
         @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
         {
             <img class="recipe-image" src="@Recipe.ImageUrl" alt="@Recipe.Name" />
@@ -15,16 +15,15 @@
             <h3 class="recipe-title">@Recipe.Name</h3>
             <p class="recipe-servings">Servings: @Recipe.Servings</p>
             <p class="recipe-time"><span class="watch-emoji">⏱</span> @time minutes</p>
+            @if (ShowFavoriteButton)
+            {
+                <button type="button" class="favorite-btn @(IsFavorite ? "is-favorite" : "")" title="@(IsFavorite ? "Remove from favorites" : "Add to favorites")" @onclick="HandleToggle" @onclick:stopPropagation="true">
+                    @(IsFavorite ? "♥" : "♡")
+                </button>
+            }
         </div>
-    </NavLink>
-
-    @if (ShowFavoriteButton)
-    {
-        <button type="button" class="favorite-btn @(IsFavorite ? "is-favorite" : "")" title="@(IsFavorite ? "Remove from favorites" : "Add to favorites")" @onclick="HandleToggle" @onclick:stopPropagation="true">
-            @(IsFavorite ? "♥" : "♡")
-        </button>
-    }
-</div>
+    </article>
+</NavLink>
 
 @code {
     [Parameter]
