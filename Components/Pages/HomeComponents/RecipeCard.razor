@@ -1,5 +1,5 @@
 <NavLink class="recipe-card-link" href="@($"/recipes/{Recipe.Id}")">
-    <div class="recipe-card">
+    <article class="recipe-card">
         @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
         {
             <img class="recipe-image" src="@Recipe.ImageUrl" alt="@Recipe.Name" />
@@ -12,7 +12,7 @@
             <p class="recipe-servings">Servings: @Recipe.Servings</p>
             <p class="recipe-time"><span class="watch-emoji">◔</span> @time minutes</p>
         </div>
-    </div>
+    </article>
 </NavLink>
 
 @code {
