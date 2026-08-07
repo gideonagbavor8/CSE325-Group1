@@ -8,25 +8,27 @@
 
 <h1>Find a recipe</h1>
 
-<div class="row g-3 mb-4" role="search">
-	<div class="col-md-8">
-		<label for="recipe-search" class="form-label">Search by recipe name</label>
-		<input id="recipe-search" class="form-control" type="search" placeholder="Try pancakes or rice..."
-			   @bind="searchText" @bind:event="oninput" />
-	</div>
-	<div class="col-md-4">
-		<label for="category-filter" class="form-label">Category</label>
-		<select id="category-filter" class="form-select" @bind="selectedCategoryId">
-			<option value="">All categories</option>
-			@foreach (var category in categories)
-			{
-				<option value="@category.Id">@category.Name</option>
-			}
-		</select>
+<div class="search-section">
+	<div class="row g-3 mb-4" role="search">
+		<div class="col-md-8">
+			<label for="recipe-search" class="form-label">Search by recipe name</label>
+			<input id="recipe-search" class="form-control search-bar" type="search" placeholder="Try ''pancakes'' or ''rice''..."
+				@bind="searchText" @bind:event="oninput" />
+		</div>
+		<div class="col-md-4">
+			<label for="category-filter" class="form-label">Category</label>
+			<select id="category-filter" class="form-select" @bind="selectedCategoryId">
+				<option value="">All categories</option>
+				@foreach (var category in categories)
+				{
+					<option value="@category.Id">@category.Name</option>
+				}
+			</select>
+		</div>
 	</div>
 </div>
 
-<h2 class="h4 mb-3">Browse by meal</h2>
+@* <h2 class="h4 mb-3">Browse by meal</h2>
 <div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
 	@if (ShouldShowMealCard("Breakfast"))
 	{
@@ -56,7 +58,7 @@
 			</article>
 		</div>
 	}
-</div>
+</div> *@
 
 @if (recipes is null)
 {

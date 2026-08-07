@@ -11,35 +11,39 @@
 }
 else
 {
-    @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
-    {
-        <img class="recipe-image" src="@Recipe.ImageUrl" alt="@Recipe.Name" />
-    }
-    else
-    {
-        <div class="recipe-image-placeholder">No photo</div>
-    }
-    <h1 class="recipe-detail-name">@Recipe.Name</h1>
-    <p class="recipe-detail-description">@Recipe.Description</p>
-    <p class="recipe-detail-servings">Servings: @Recipe.Servings</p>
-    <p class="recipe-detail-preptime">Prep. Time: @Recipe.PreparationTime minutes</p>
-    <p class="recipe-detail-cooktime">Cook Time: @Recipe.CookingTime minutes</p>
-    <p class="recipe-detail-ingredients">Ingredients: @Recipe.Ingredients</p>
-    <p class="recipe-detail-instructions">Instructions: @Recipe.Instructions</p>
+    <div class="recipe-detail-container">
+        @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
+        {
+            <img class="recipe-image-detail" src="@Recipe.ImageUrl" alt="@Recipe.Name" />
+        }
+        else
+        {
+            <div class="recipe-image-placeholder">No photo</div>
+        }
+        <h1 class="recipe-detail-name">@Recipe.Name</h1>
+        <p class="recipe-detail-description">@Recipe.Description</p>
+        <div class="recipe-detail-meta">
+            <p class="recipe-detail-servings">Servings: @Recipe.Servings</p>
+            <p class="recipe-detail-preptime">Prep. Time: @Recipe.PreparationTime minutes</p>
+            <p class="recipe-detail-cooktime">Cook Time: @Recipe.CookingTime minutes</p>
+        </div>
+        <p class="recipe-detail-ingredients">Ingredients: @Recipe.Ingredients</p>
+        <p class="recipe-detail-instructions">Instructions: @Recipe.Instructions</p>
 
-    <div class="mt-3">
-        @if (isOwner)
-        {
-            <a href="/recipes/edit/@Recipe.Id" class="btn btn-warning">Edit</a>
-            <button class="btn btn-danger" @onclick="DeleteRecipe">Delete</button>
-        }
-        <a href="/recipes" class="btn btn-secondary">Back to List</a>
-        @if (isAuthenticated)
-        {
-            <button class="btn @(isFavorite ? "btn-outline-danger" : "btn-outline-secondary")" @onclick="ToggleFavorite">
-                @(isFavorite ? "♥ Favorited" : "♡ Favorite")
-            </button>
-        }
+        <div class="mt-3">
+            @if (isOwner)
+            {
+                <a href="/recipes/edit/@Recipe.Id" class="btn btn-warning">Edit</a>
+                <button class="btn btn-danger" @onclick="DeleteRecipe">Delete</button>
+            }
+            <a href="/recipes" class="btn btn-secondary">Back to List</a>
+            @if (isAuthenticated)
+            {
+                <button class="btn @(isFavorite ? "btn-outline-danger" : "btn-outline-secondary")" @onclick="ToggleFavorite">
+                    @(isFavorite ? "♥ Favorited" : "♡ Favorite")
+                </button>
+            }
+        </div>
     </div>
 }
 

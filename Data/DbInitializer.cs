@@ -108,7 +108,7 @@ namespace ChefConnect.Data
                     PreparationTime = 10,
                     CookingTime = 15,
                     Servings = 4,
-                    ImageUrl = "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=80",
+                    ImageUrl = "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=500&auto=format&fit=crop&q=60",
                     UserId = users[0].Id,
                     CategoryId = categories[0].Id
                 },
@@ -122,9 +122,100 @@ namespace ChefConnect.Data
                     PreparationTime = 20,
                     CookingTime = 45,
                     Servings = 6,
-                    ImageUrl = "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=80",
+                    ImageUrl = "https://images.unsplash.com/photo-1666190092689-e3968aa0c32c?w=500&auto=format&fit=crop&q=60",
                     UserId = users[1].Id,
                     CategoryId = categories[2].Id
+                },
+                new Recipe
+                {
+                    Name = "Penne Pasta with Meat Sauce",
+                    Description = "Penne noodles with a tomato-based meat sauce.",
+                    Ingredients = "Penne noodles, ground beef, tomato juice, onion, salt and pepper",
+                    Instructions = "Cook noodles. Brown beef and then mix with tomato juice, onion, salt and pepper.",
+                    PreparationTime = 15,
+                    CookingTime = 30,
+                    Servings = 6,
+                    ImageUrl = "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=500&auto=format&fit=crop&q=60",
+                    UserId = users[0].Id,
+                    CategoryId = categories[2].Id
+                },
+                new Recipe
+                {
+                    Name = "Grilled Chicken Salad",
+                    Description = "Delicious grilled chicken salad.",
+                    Ingredients = "Chicken, Romaine lettuce, tomatoes, and salad croutons",
+                    Instructions = "Season chicken and then grill. Place lettuce in a bowl and then put grilled chicken on top along with tomatoes and croutons.",
+                    PreparationTime = 15,
+                    CookingTime = 25,
+                    Servings = 6,
+                    ImageUrl = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60",
+                    UserId = users[1].Id,
+                    CategoryId = categories[1].Id
+                },
+                new Recipe
+                {
+                    Name = "Glazed Salmon",
+                    Description = "Salmon with a tangy citrus glaze.",
+                    Ingredients = "Salmon, lemon, orange, sugar, salt, and pepper",
+                    Instructions = "Make glaze by mixing lemon, orange, sugar, salt and pepper.  Put salmon on grill and lightly coat with glaze. Add more glaze as needed.",
+                    PreparationTime = 15,
+                    CookingTime = 30,
+                    Servings = 6,
+                    ImageUrl = "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=500&auto=format&fit=crop&q=60",
+                    UserId = users[0].Id,
+                    CategoryId = categories[2].Id
+                },
+                new Recipe
+                {
+                    Name = "Chocolate Brownies",
+                    Description = "Gooey chocolate brownies.",
+                    Ingredients = "Sugar, flour, butter, eggs, cocoa powder, vanilla, baking powder, and salt",
+                    Instructions = "Whisk sugar, flour, melted butter, eggs, cocoa powder, vanilla, baking powder, and salt in a large bowl until combined.  Spread batter into a greased pan and cook at 350 degrees F for 25 minutes.",
+                    PreparationTime = 10,
+                    CookingTime = 25,
+                    Servings = 10,
+                    ImageUrl = "https://images.unsplash.com/photo-1636743715220-d8f8dd900b87?w=500&auto=format&fit=crop&q=60",
+                    UserId = users[0].Id,
+                    CategoryId = categories[3].Id
+                },
+                new Recipe
+                {
+                    Name = "Apple Pie",
+                    Description = "Sweet apple pie with flaky crust.",
+                    Ingredients = "Pie crust, apples, sugar, flour, cinnamon, salt, nutmeg, and butter",
+                    Instructions = "Combine apples, sugar, flour, cinnamon, salt, and nutmeg in a bowl. Put everything into prepared pie crust. Cut holes in top crust to allow venting.",
+                    PreparationTime = 25,
+                    CookingTime = 50,
+                    Servings = 8,
+                    ImageUrl = "https://images.unsplash.com/photo-1628815871005-a860e5905628?w=500&auto=format&fit=crop&q=60",
+                    UserId = users[1].Id,
+                    CategoryId = categories[3].Id
+                },
+                new Recipe
+                {
+                    Name = "Belgian Waffles",
+                    Description = "A yummy breakfast dish that is thick and crispy on the outside and fluffy on the inside.",
+                    Ingredients = "Flour, sugar, baking powder, baking soda, salt, three large eggs, milk, melted butter, vanilla extract, cinnamon, and nutmeg",
+                    Instructions = "In a large bowl, whisk together flour, cornstarch, sugar, baking powder, baking soda, and salt until evenly combined.  In another bowl, whisk the egg yolks with milk, melted butter, and vanilla extract until smooth.  Pour the wet mixture into the dry ingredients and stir gently until just combined. The batter should remain slightly lumpy to avoid overmixing. Pour the batter into the hot waffle iron (about ¾ cup per waffle, depending on size) and cook until golden brown and crisp, usually 4-5 minutes.",
+                    PreparationTime = 15,
+                    CookingTime = 5,
+                    Servings = 12,
+                    ImageUrl = "https://images.unsplash.com/photo-1568051243851-f9b136146e97?w=500&auto=format&fit=crop&q=60",
+                    UserId = users[0].Id,
+                    CategoryId = categories[0].Id
+                },
+                new Recipe
+                {
+                    Name = "Rotini pasta salad",
+                    Description = "A savory tomato-based sauce mixed with rotini pasta noodles.",
+                    Ingredients = "Rotini pasta, tomato sauce and sliced tomatoes",
+                    Instructions = "Cook pasta and then mix with tomato sauce.  Top with sliced tomatoes.",
+                    PreparationTime = 15,
+                    CookingTime = 5,
+                    Servings = 12,
+                    ImageUrl = "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=500&auto=format&fit=crop&q=60",
+                    UserId = users[1].Id,
+                    CategoryId = categories[1].Id
                 }
             };
 
