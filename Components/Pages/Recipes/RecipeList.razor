@@ -62,22 +62,21 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        AuthenticationState? authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        ClaimsPrincipal? user = authState.User;
+        AuthenticationState authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        ClaimsPrincipal user = authState.User;
         isAuthenticated = user.Identity?.IsAuthenticated ?? false;
 
-        if (isAuthenticated)
+        if (!isAuthenticated)
         {
-            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!string.IsNullOrEmpty(userId))
-            {
-                recipes = await RecipeService.GetRecipesByUserAsync(userId);
-                favoriteIds = await RecipeService.GetFavoriteRecipeIdsAsync(userId);
-            }
+            NavigationManager.NavigateTo("/");
+            return;
         }
-        else
+
+        userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
         {
-            recipes = new List<Recipe>();
+            recipes = await RecipeService.GetRecipesByUserAsync(userId);
+            favoriteIds = await RecipeService.GetFavoriteRecipeIdsAsync(userId);
         }
     }
 
