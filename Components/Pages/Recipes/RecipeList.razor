@@ -5,7 +5,7 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
 
-<h3>Recipes</h3>
+<h3>My Recipes</h3>
 
 <a href="/recipes/create" class="btn btn-primary mb-3">Create New Recipe</a>
 
@@ -62,8 +62,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        recipes = await RecipeService.GetAllRecipesAsync();
-
         AuthenticationState? authState = await AuthStateProvider.GetAuthenticationStateAsync();
         ClaimsPrincipal? user = authState.User;
         isAuthenticated = user.Identity?.IsAuthenticated ?? false;
@@ -73,15 +71,23 @@ else
             userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!string.IsNullOrEmpty(userId))
             {
+                recipes = await RecipeService.GetRecipesByUserAsync(userId);
                 favoriteIds = await RecipeService.GetFavoriteRecipeIdsAsync(userId);
             }
+        }
+        else
+        {
+            recipes = new List<Recipe>();
         }
     }
 
     private async Task DeleteRecipe(int id)
     {
         await RecipeService.DeleteRecipeAsync(id);
-        recipes = await RecipeService.GetAllRecipesAsync();
+        if (!string.IsNullOrEmpty(userId))
+        {
+            recipes = await RecipeService.GetRecipesByUserAsync(userId);
+        }
     }
 
     private async Task ToggleFavorite(int recipeId)
