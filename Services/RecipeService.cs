@@ -47,13 +47,26 @@ public class RecipeService
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteRecipeAsync(int id)
+    public async Task DeleteRecipeAsync(int id, string? userId = null)
     {
         var recipe = await _context.Recipes.FindAsync(id);
         if (recipe != null)
         {
+            if (!string.IsNullOrEmpty(userId) && recipe.UserId != userId)
+            {
+                return;
+            }
+
             _context.Recipes.Remove(recipe);
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<List<Recipe>> GetRecipesByUserIdAsync(string userId)
+    {
+        return await _context.Recipes
+            .Include(r => r.Category)
+            .Where(r => r.UserId == userId)
+            .ToListAsync();
     }
 }

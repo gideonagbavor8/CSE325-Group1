@@ -73,7 +73,9 @@ else
 			<div class="col">
 				<article class="card h-100 shadow-sm">
 					<div class="card-body">
-						<h2 class="h5 card-title">@recipe.Name</h2>
+						<h2 class="h5 card-title">
+							<a href="/recipes/@recipe.Id" class="text-decoration-none">@recipe.Name</a>
+						</h2>
 						<p class="card-text">@recipe.Description</p>
 						<span class="badge text-bg-secondary">@(recipe.Category?.Name ?? "Uncategorized")</span>
 					</div>

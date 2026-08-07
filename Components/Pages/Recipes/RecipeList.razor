@@ -1,9 +1,12 @@
 @page "/recipes"
 @rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
 
-<h3>Recipes</h3>
+<h3>My Recipes</h3>
 
 <a href="/recipes/create" class="btn btn-primary mb-3">Create New Recipe</a>
 
@@ -38,7 +41,7 @@ else
                     <td>
                         <a href="/recipes/@recipe.Id" class="btn btn-info btn-sm">View</a>
                         <a href="/recipes/edit/@recipe.Id" class="btn btn-warning btn-sm">Edit</a>
-                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteRecipe(recipe.Id)">Delete</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteRecipe(recipe)">Delete</button>
                     </td>
                 </tr>
             }
@@ -48,15 +51,35 @@ else
 
 @code {
     private List<Recipe>? recipes;
+    private string? currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
-        recipes = await RecipeService.GetAllRecipesAsync();
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        await LoadUserRecipes();
     }
 
-    private async Task DeleteRecipe(int id)
+    private async Task LoadUserRecipes()
     {
-        await RecipeService.DeleteRecipeAsync(id);
-        recipes = await RecipeService.GetAllRecipesAsync();
+        if (!string.IsNullOrEmpty(currentUserId))
+        {
+            recipes = await RecipeService.GetRecipesByUserIdAsync(currentUserId);
+        }
+        else
+        {
+            recipes = new List<Recipe>();
+        }
+    }
+
+    private async Task DeleteRecipe(Recipe recipe)
+    {
+        if (!string.IsNullOrEmpty(currentUserId) && recipe.UserId == currentUserId)
+        {
+            await RecipeService.DeleteRecipeAsync(recipe.Id, currentUserId);
+            await LoadUserRecipes();
+        }
     }
 }

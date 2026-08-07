@@ -1,7 +1,10 @@
 @page "/recipes/edit/{Id:int}"
 @rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
 
 <h3>Edit Recipe</h3>
 
@@ -86,6 +89,15 @@ else
             recipe = await RecipeService.GetRecipeByIdAsync(Id);
         }
         categories = await RecipeService.GetCategoriesAsync();
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (recipe == null || recipe.UserId != currentUserId)
+        {
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
     }
 
     private async Task HandleSubmit()
