@@ -1,13 +1,19 @@
 @page "/recipes/edit/{Id:int}"
 @rendermode InteractiveServer
+@using System.Security.Claims
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
 
 <h3>Edit Recipe</h3>
 
 @if (recipe == null)
 {
     <p>Loading...</p>
+}
+else if (!isOwner)
+{
+    <p>You are not authorized to edit this recipe.</p>
 }
 else
 {
@@ -78,6 +84,7 @@ else
     [SupplyParameterFromForm]
     private Recipe? recipe { get; set; }
     private List<Category> categories = new();
+    private bool isOwner;
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,11 +93,23 @@ else
             recipe = await RecipeService.GetRecipeByIdAsync(Id);
         }
         categories = await RecipeService.GetCategoriesAsync();
+
+        AuthenticationState authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        ClaimsPrincipal user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            string? userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (recipe != null && recipe.UserId == userId)
+            {
+                isOwner = true;
+            }
+        }
     }
 
     private async Task HandleSubmit()
     {
-        if (recipe != null)
+        if (recipe != null && isOwner)
         {
             await RecipeService.UpdateRecipeAsync(recipe);
             NavigationManager.NavigateTo("/recipes", forceLoad: true);
