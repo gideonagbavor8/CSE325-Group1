@@ -393,3 +393,65 @@ B.O. Got help from Copilot on implementing this mobile breakpoint.  I typed ever
     text-align: center;
   }
 }
+
+/*
+Recipe Image Input
+Layout for the two ways of adding a recipe image:
+uploading a file, or supplying an externally hosted image URL.
+*/
+.recipe-image-input {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.recipe-image-option {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.recipe-image-separator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-top: 1.75rem;
+  font-weight: 600;
+  color: #6c757d;
+}
+
+/* Vertical rule shown between the two image options */
+.recipe-image-separator::before,
+.recipe-image-separator::after {
+  content: "";
+  flex: 1 1 auto;
+  width: 1px;
+  background: #dee2e6;
+}
+
+.recipe-image-preview-img {
+  max-width: 320px;
+  max-height: 220px;
+  width: 100%;
+  object-fit: cover;
+  border: 1px solid #dee2e6;
+}
+
+/* Stack the two image options on small screens */
+@media (max-width: 600px) {
+  .recipe-image-input {
+    flex-direction: column;
+  }
+
+  .recipe-image-separator {
+    flex-direction: row;
+    padding-top: 0;
+  }
+
+  .recipe-image-separator::before,
+  .recipe-image-separator::after {
+    width: auto;
+    height: 1px;
+  }
+}

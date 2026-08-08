@@ -1,12 +1,14 @@
 @using System.Security.Claims
+@using ChefConnect.Services
 @inject RecipeService RecipeService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <NavLink class="recipe-card-link" href="@($"/recipes/{Recipe.Id}")">
     <article class="recipe-card">
-        @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
+        @* Works for both external image URLs and uploaded images *@
+        @if (!string.IsNullOrWhiteSpace(imageSource))
         {
-            <img class="recipe-image" src="@Recipe.ImageUrl" alt="@Recipe.Name" />
+            <img class="recipe-image" src="@imageSource" alt="@Recipe.Name" loading="lazy" />
         }
         else{
             <div class="recipe-image-placeholder">No photo</div>
@@ -17,7 +19,9 @@
             <p class="recipe-time"><span class="watch-emoji">⏱</span> @time minutes</p>
             @if (ShowFavoriteButton)
             {
-                <button type="button" class="favorite-btn @(IsFavorite ? "is-favorite" : "")" title="@(IsFavorite ? "Remove from favorites" : "Add to favorites")" @onclick="HandleToggle" @onclick:stopPropagation="true">
+                @* preventDefault keeps the surrounding card link from
+                   opening the recipe when the heart is clicked *@
+                <button type="button" class="favorite-btn @(IsFavorite ? "is-favorite" : "")" title="@(IsFavorite ? "Remove from favorites" : "Add to favorites")" @onclick="HandleToggle" @onclick:stopPropagation="true" @onclick:preventDefault="true">
                     @(IsFavorite ? "♥" : "♡")
                 </button>
             }
@@ -46,9 +50,14 @@
 
     private int time;
 
+    // Image source resolved from the stored recipe image value
+    //  this is either an external URL or an uploaded image path
+    private string? imageSource;
+
     protected override void OnParametersSet()
     {
         time = Recipe.PreparationTime + Recipe.CookingTime;
+        imageSource = RecipeImageService.ResolveImageSource(Recipe.ImageUrl);
     }
 
     private async Task HandleToggle()
