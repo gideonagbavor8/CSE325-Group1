@@ -1,127 +1,140 @@
 @page "/profile"
-@using System.Security.Claims
-@using ChefConnect.Components.Pages.HomeComponents
 @rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
 @attribute [Authorize]
 
-@inject RecipeService RecipeService
-@inject AuthenticationStateProvider AuthStateProvider
+<PageTitle>My Profile | ChefConnect</PageTitle>
 
+<!--
+===========================================================
+ChefConnect - User Profile
 
-<div class="profile-page">
-    @if (currentUser is null)
-    {
-        <p>Loading...</p>
-    }
-    else
-    {
-        <div class="profile-header">
-            @if (!string.IsNullOrWhiteSpace(currentUser.ProfileImage))
-            {
-                <img class="profile-avatar" src="@currentUser.ProfileImage" alt="@currentUser.FirstName" />
-            }
-            else
-            {
-                <div class="profile-avatar profile-avatar-placeholder">
-                    @currentUser.FirstName.Substring(startIndex: 0, length: 1)@currentUser.LastName.Substring(startIndex: 0, length: 1)
+Purpose:
+Provides authenticated users with a simple profile page.
+
+The page displays information available from the authenticated
+Identity claims without exposing sensitive account information.
+===========================================================
+-->
+
+<div class="container py-5">
+
+    <AuthorizeView>
+
+        <Authorized>
+
+            <div class="row justify-content-center">
+
+                <div class="col-md-8 col-lg-6">
+
+                    <div class="card shadow-sm">
+
+                        <div class="card-body p-4">
+
+                            <div class="text-center mb-4">
+
+                                <i class="bi bi-person-circle display-4"
+                                   aria-hidden="true"></i>
+
+                                <h1 class="h3 mt-3">
+                                    My Profile
+                                </h1>
+
+                                <p class="text-muted">
+                                    Your ChefConnect account information.
+                                </p>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label class="form-label fw-bold">
+                                    Account
+                                </label>
+
+                                <p class="form-control-plaintext">
+                                    @context.User.Identity?.Name
+                                </p>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label class="form-label fw-bold">
+                                    Account Status
+                                </label>
+
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-success">
+                                        Authenticated
+                                    </span>
+                                </p>
+
+                            </div>
+
+                            <hr />
+
+                            <div class="d-flex gap-2 flex-wrap">
+
+                                <a href="/recipes"
+                                   class="btn btn-primary">
+
+                                    <i class="bi bi-journal-text me-1"
+                                       aria-hidden="true"></i>
+
+                                    View Recipes
+
+                                </a>
+
+                                <a href="/recipes/create"
+                                   class="btn btn-outline-primary">
+
+                                    <i class="bi bi-plus-circle me-1"
+                                       aria-hidden="true"></i>
+
+                                    Create Recipe
+
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
                 </div>
-            }
-            <div>
-                <h1>@currentUser.FirstName @currentUser.LastName</h1>
-                <p class="profile-email">@currentUser.Email</p>
-                <p class="profile-since">Cooking since @currentUser.CreatedAt.ToString(format: "MMMM yyyy")</p>
+
             </div>
-        </div>
 
-        <div class="profile-tabs">
-            <button class="profile-tab @(activeTab == "recipes" ? "active" : "")" @onclick='() => activeTab = "recipes"'>
-                My Recipes (@myRecipes.Count)
-            </button>
-            <button class="profile-tab @(activeTab == "favorites" ? "active" : "")" @onclick='() => activeTab = "favorites"'>
-                Favorites (@favoriteRecipes.Count)
-            </button>
-        </div>
+        </Authorized>
 
-        <div class="profile-tab-content">
-            @if (activeTab == "recipes")
-            {
-                @if (!myRecipes.Any())
-                {
-                    <p>You haven't created any recipes yet. <a href="/recipes/create">Create one</a>.</p>
-                }
-                else
-                {
-                    <div class="recipe-grid">
-                        @foreach (var recipe in myRecipes)
-                        {
-                            <RecipeCard Recipe="recipe" ShowFavoriteButton="true" IsFavorite="favoriteIds.Contains(recipe.Id)" OnToggleFavorite="ToggleFavorite" />
-                        }
-                    </div>
-                }
-            }
-            else
-            {
-                @if (!favoriteRecipes.Any())
-                {
-                    <p>You haven't favorited any recipes yet. <a href="/recipes">Browse recipes</a>.</p>
-                }
-                else
-                {
-                    <div class="recipe-grid">
-                        @foreach (var recipe in favoriteRecipes)
-                        {
-                            <RecipeCard Recipe="recipe" ShowFavoriteButton="true" IsFavorite="true" OnToggleFavorite="ToggleFavorite" />
-                        }
-                    </div>
-                }
-            }
-        </div>
-    }
+        <NotAuthorized>
+
+            <div class="alert alert-warning"
+                 role="alert">
+
+                <h1 class="h4">
+                    Authentication Required
+                </h1>
+
+                <p>
+                    Please log in to view your profile.
+                </p>
+
+                <a href="/Account/Login"
+                   class="btn btn-primary">
+
+                    Log In
+
+                </a>
+
+            </div>
+
+        </NotAuthorized>
+
+    </AuthorizeView>
+
 </div>
-
-
-
-@code {
-    private ApplicationUser? currentUser;
-    private string? userId;
-    private string activeTab = "recipes";
-    private List<Recipe> myRecipes = new List<Recipe>();
-    private List<Recipe> favoriteRecipes = new List<Recipe>();
-    private HashSet<int> favoriteIds = new HashSet<int>();
-
-    protected override async Task OnInitializedAsync()
-    {
-        AuthenticationState? authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        ClaimsPrincipal? user = authState.User;
-        userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (!string.IsNullOrEmpty(userId))
-        {
-            currentUser     = await RecipeService.GetUserByIdAsync(userId);
-            myRecipes       = await RecipeService.GetRecipesByUserAsync(userId);
-            favoriteRecipes = await RecipeService.GetFavoriteRecipesAsync(userId);
-            favoriteIds     = favoriteRecipes.Select(r => r.Id).ToHashSet();
-        }
-    }
-
-    private async Task ToggleFavorite(Recipe recipe)
-    {
-        if (string.IsNullOrEmpty(userId))
-        {
-            return;
-        }
-
-        bool nowFavorite = await RecipeService.ToggleFavoriteAsync(userId, recipe.Id);
-
-        if (nowFavorite)
-        {
-            favoriteIds.Add(recipe.Id);
-        }
-        else
-        {
-            favoriteIds.Remove(recipe.Id);
-        }
-
-        favoriteRecipes = await RecipeService.GetFavoriteRecipesAsync(userId);
-    }
-}
