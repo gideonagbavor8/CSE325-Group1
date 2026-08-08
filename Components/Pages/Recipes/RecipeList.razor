@@ -1,109 +1,292 @@
 @page "/recipes"
 @rendermode InteractiveServer
-@using System.Security.Claims
+
+@using ChefConnect.Models
+
 @inject RecipeService RecipeService
-@inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthStateProvider
 
-<h3>My Recipes</h3>
+<!--
+===========================================================
+ChefConnect - Recipe List
 
-<a href="/recipes/create" class="btn btn-primary mb-3">Create New Recipe</a>
+Purpose:
+Displays all recipes available in ChefConnect and provides
+options to view, edit, create, and delete recipes.
 
-@if (recipes == null)
+The delete operation uses a two-step confirmation process
+to help prevent accidental deletion of recipes.
+===========================================================
+-->
+
+<PageTitle>Recipes | ChefConnect</PageTitle>
+
+<div class="container py-4">
+
+    <!-- Page heading and create-recipe button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Recipes</h1>
+
+            <p class="text-muted">
+                Browse and manage recipes in ChefConnect.
+            </p>
+        </div>
+
+        <a href="/recipes"
+           class="btn btn-primary"
+           @onclick="NavigateToCreateRecipe">
+
+            <i class="bi bi-plus-circle me-1"
+               aria-hidden="true"></i>
+
+            Create Recipe
+        </a>
+    </div>
+
+    @if (recipes == null)
+    {
+        <!-- Displayed while recipes are being retrieved. -->
+        <div class="text-center py-5">
+
+            <div class="spinner-border"
+                 role="status"
+                 aria-label="Loading recipes">
+            </div>
+
+            <p class="mt-2">
+                Loading recipes...
+            </p>
+
+        </div>
+    }
+    else if (!recipes.Any())
+    {
+        <!-- Displayed when the database contains no recipes. -->
+        <div class="alert alert-info"
+             role="alert">
+
+            No recipes have been added yet.
+
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Prep Time</th>
+                        <th scope="col">Cook Time</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (var recipe in recipes)
+                    {
+                        <tr>
+
+                            <!-- Recipe name -->
+                            <td>
+                                <strong>
+                                    @recipe.Name
+                                </strong>
+                            </td>
+
+                            <!-- Recipe category -->
+                            <td>
+                                @(recipe.Category?.Name ?? "N/A")
+                            </td>
+
+                            <!-- Preparation time -->
+                            <td>
+                                @recipe.PreparationTime mins
+                            </td>
+
+                            <!-- Cooking time -->
+                            <td>
+                                @recipe.CookingTime mins
+                            </td>
+
+                            <!-- Recipe actions -->
+                            <td>
+
+                                <div class="d-flex gap-2 flex-wrap">
+
+                                    <!-- View recipe -->
+                                    <a href="/recipes/@recipe.Id"
+                                       class="btn btn-info btn-sm">
+
+                                        <i class="bi bi-eye me-1"
+                                           aria-hidden="true"></i>
+
+                                        View
+                                    </a>
+
+                                    <!-- Edit recipe -->
+                                    <a href="/recipes/edit/@recipe.Id"
+                                       class="btn btn-warning btn-sm">
+
+                                        <i class="bi bi-pencil me-1"
+                                           aria-hidden="true"></i>
+
+                                        Edit
+                                    </a>
+
+                                    @if (confirmDeleteId == recipe.Id)
+                                    {
+                                        <!--
+                                        Confirmation controls are displayed
+                                        after the user initially selects Delete.
+                                        -->
+
+                                        <span class="text-danger small align-self-center">
+                                            Delete this recipe?
+                                        </span>
+
+                                        <!-- Confirm deletion -->
+                                        <button type="button"
+                                                class="btn btn-danger btn-sm"
+                                                @onclick="() => ConfirmDeleteRecipe(recipe.Id)">
+
+                                            <i class="bi bi-check-circle me-1"
+                                               aria-hidden="true"></i>
+
+                                            Yes, Delete
+                                        </button>
+
+                                        <!-- Cancel deletion -->
+                                        <button type="button"
+                                                class="btn btn-secondary btn-sm"
+                                                @onclick="CancelDelete">
+
+                                            Cancel
+
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <!--
+                                        First step of the deletion process.
+                                        This does NOT delete the recipe.
+                                        It only displays the confirmation controls.
+                                        -->
+                                        <button type="button"
+                                                class="btn btn-danger btn-sm"
+                                                @onclick="() => RequestDelete(recipe.Id)"
+                                                aria-label="Delete @recipe.Name">
+
+                                            <i class="bi bi-trash me-1"
+                                               aria-hidden="true"></i>
+
+                                            Delete
+                                        </button>
+                                    }
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+    }
+
+    <!-- Operation status message -->
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="alert alert-success mt-3"
+             role="status">
+
+            @statusMessage
+
+        </div>
+    }
+
+</div>
+
+@code
 {
-    <p>Loading...</p>
-}
-else if (!recipes.Any())
-{
-    <p>No recipes found.</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Prep Time</th>
-                <th>Cook Time</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var recipe in recipes)
-            {
-                <tr>
-                    <td>@recipe.Name</td>
-                    <td>@(recipe.Category?.Name ?? "N/A")</td>
-                    <td>@recipe.PreparationTime mins</td>
-                    <td>@recipe.CookingTime mins</td>
-                    <td>
-                        <a href="/recipes/@recipe.Id" class="btn btn-info btn-sm">View</a>
-                        <a href="/recipes/edit/@recipe.Id" class="btn btn-warning btn-sm">Edit</a>
-                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteRecipe(recipe.Id)">Delete</button>
-                        @if (isAuthenticated)
-                        {
-                            <button class="btn btn-sm @(favoriteIds.Contains(recipe.Id) ? "btn-outline-danger" : "btn-outline-secondary")" @onclick="() => ToggleFavorite(recipe.Id)">
-                                @(favoriteIds.Contains(recipe.Id) ? "♥ Favorited" : "♡ Favorite")
-                            </button>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-
-@code {
+    // Stores the recipes retrieved from the database.
     private List<Recipe>? recipes;
-    private string? userId;
-    private bool isAuthenticated;
-    private HashSet<int> favoriteIds = new HashSet<int>();
 
+    // Stores the ID of the recipe awaiting deletion confirmation.
+    private int? confirmDeleteId;
+
+    // Provides feedback to the user after an operation.
+    private string? statusMessage;
+
+    /// <summary>
+    /// Loads recipes when the page is first initialized.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
-        AuthenticationState authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        ClaimsPrincipal user = authState.User;
-        isAuthenticated = user.Identity?.IsAuthenticated ?? false;
-
-        if (!isAuthenticated)
-        {
-            NavigationManager.NavigateTo("/");
-            return;
-        }
-
-        userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrEmpty(userId))
-        {
-            recipes = await RecipeService.GetRecipesByUserAsync(userId);
-            favoriteIds = await RecipeService.GetFavoriteRecipeIdsAsync(userId);
-        }
+        await LoadRecipesAsync();
     }
 
-    private async Task DeleteRecipe(int id)
+    /// <summary>
+    /// Retrieves the latest recipe list from the database.
+    /// </summary>
+    private async Task LoadRecipesAsync()
+    {
+        recipes = await RecipeService.GetAllRecipesAsync();
+    }
+
+    /// <summary>
+    /// Displays the confirmation controls for the selected recipe.
+    /// No deletion occurs at this stage.
+    /// </summary>
+    private void RequestDelete(int id)
+    {
+        confirmDeleteId = id;
+        statusMessage = null;
+    }
+
+    /// <summary>
+    /// Cancels the pending delete operation.
+    /// </summary>
+    private void CancelDelete()
+    {
+        confirmDeleteId = null;
+    }
+
+    /// <summary>
+    /// Deletes the selected recipe after the user confirms.
+    /// </summary>
+    private async Task ConfirmDeleteRecipe(int id)
     {
         await RecipeService.DeleteRecipeAsync(id);
-        if (!string.IsNullOrEmpty(userId))
-        {
-            recipes = await RecipeService.GetRecipesByUserAsync(userId);
-        }
+
+        // Clear the confirmation state after deletion.
+        confirmDeleteId = null;
+
+        // Reload the recipes so the deleted recipe disappears immediately.
+        await LoadRecipesAsync();
+
+        // Inform the user that the operation completed successfully.
+        statusMessage = "The recipe was successfully deleted.";
     }
 
-    private async Task ToggleFavorite(int recipeId)
+    /// <summary>
+    /// Navigates the user to the recipe creation page.
+    /// </summary>
+    private void NavigateToCreateRecipe()
     {
-        if (string.IsNullOrEmpty(userId))
-        {
-            return;
-        }
-
-        bool nowFavorite = await RecipeService.ToggleFavoriteAsync(userId, recipeId);
-        if (nowFavorite)
-        {
-            favoriteIds.Add(recipeId);
-        }
-        else
-        {
-            favoriteIds.Remove(recipeId);
-        }
+        NavigationManager.NavigateTo("/recipes/create");
     }
+
+    // NavigationManager is declared here so the page can navigate
+    // to the recipe creation page without a standard HTML redirect.
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
 }

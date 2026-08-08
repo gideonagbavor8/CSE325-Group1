@@ -1,118 +1,379 @@
 @page "/recipes/edit/{Id:int}"
 @rendermode InteractiveServer
+
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using ChefConnect.Models
+
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
 
-<h3>Edit Recipe</h3>
+<!--
+===========================================================
+ChefConnect - Edit Recipe
 
-@if (recipe == null)
+Purpose:
+Allows the owner of a recipe to update its information.
+
+Security:
+Only the authenticated user who created the recipe is
+allowed to edit it. The ownership check is performed using
+the ASP.NET Core Identity user ID.
+
+The form includes validation based on the Recipe model's
+Data Annotations.
+===========================================================
+-->
+
+<PageTitle>Edit Recipe | ChefConnect</PageTitle>
+
+<div class="container py-4">
+
+    @if (recipe == null)
+    {
+        <!-- Displayed while the recipe is being retrieved. -->
+        <div class="text-center py-5">
+
+            <div class="spinner-border"
+                 role="status"
+                 aria-label="Loading recipe">
+            </div>
+
+            <p class="mt-2">
+                Loading recipe...
+            </p>
+
+        </div>
+    }
+    else if (!isOwner)
+    {
+        <!--
+        The recipe exists, but the authenticated user does
+        not own it.
+        -->
+
+        <div class="alert alert-danger"
+             role="alert">
+
+            <h1 class="h4">
+                Access Denied
+            </h1>
+
+            <p>
+                You are not authorized to edit this recipe.
+            </p>
+
+            <a href="/recipes"
+               class="btn btn-secondary">
+
+                <i class="bi bi-arrow-left me-1"
+                   aria-hidden="true"></i>
+
+                Back to Recipes
+
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <!-- Page heading -->
+        <div class="mb-4">
+
+            <h1>
+                Edit Recipe
+            </h1>
+
+            <p class="text-muted">
+                Update the information for
+                <strong>@recipe.Name</strong>.
+            </p>
+
+        </div>
+
+        <EditForm Model="recipe"
+                  OnValidSubmit="HandleSubmit"
+                  FormName="EditRecipeForm">
+
+            <!-- Enable Data Annotations validation -->
+            <DataAnnotationsValidator />
+
+            <!-- Display validation errors -->
+            <ValidationSummary class="text-danger" />
+
+            <!-- Recipe Name -->
+            <div class="mb-3">
+
+                <label for="recipe-name"
+                       class="form-label">
+                    Name
+                </label>
+
+                <InputText id="recipe-name"
+                           class="form-control"
+                           @bind-Value="recipe.Name" />
+
+                <ValidationMessage For="() => recipe.Name"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+
+                <label for="recipe-description"
+                       class="form-label">
+                    Description
+                </label>
+
+                <InputTextArea id="recipe-description"
+                               class="form-control"
+                               rows="3"
+                               @bind-Value="recipe.Description" />
+
+                <ValidationMessage For="() => recipe.Description"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Category -->
+            <div class="mb-3">
+
+                <label for="recipe-category"
+                       class="form-label">
+                    Category
+                </label>
+
+                <InputSelect id="recipe-category"
+                             class="form-select"
+                             @bind-Value="recipe.CategoryId">
+
+                    <option value="0">
+                        Select Category...
+                    </option>
+
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category.Id">
+                            @category.Name
+                        </option>
+                    }
+
+                </InputSelect>
+
+                <ValidationMessage For="() => recipe.CategoryId"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Ingredients -->
+            <div class="mb-3">
+
+                <label for="recipe-ingredients"
+                       class="form-label">
+                    Ingredients
+                </label>
+
+                <InputTextArea id="recipe-ingredients"
+                               class="form-control"
+                               rows="5"
+                               placeholder="Enter the ingredients."
+                               @bind-Value="recipe.Ingredients" />
+
+                <ValidationMessage For="() => recipe.Ingredients"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Instructions -->
+            <div class="mb-3">
+
+                <label for="recipe-instructions"
+                       class="form-label">
+                    Instructions
+                </label>
+
+                <InputTextArea id="recipe-instructions"
+                               class="form-control"
+                               rows="6"
+                               placeholder="Enter the cooking instructions."
+                               @bind-Value="recipe.Instructions" />
+
+                <ValidationMessage For="() => recipe.Instructions"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Preparation Time -->
+            <div class="mb-3">
+
+                <label for="recipe-preparation"
+                       class="form-label">
+                    Preparation Time (mins)
+                </label>
+
+                <InputNumber id="recipe-preparation"
+                             class="form-control"
+                             @bind-Value="recipe.PreparationTime" />
+
+                <ValidationMessage For="() => recipe.PreparationTime"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Cooking Time -->
+            <div class="mb-3">
+
+                <label for="recipe-cooking"
+                       class="form-label">
+                    Cooking Time (mins)
+                </label>
+
+                <InputNumber id="recipe-cooking"
+                             class="form-control"
+                             @bind-Value="recipe.CookingTime" />
+
+                <ValidationMessage For="() => recipe.CookingTime"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Servings -->
+            <div class="mb-3">
+
+                <label for="recipe-servings"
+                       class="form-label">
+                    Servings
+                </label>
+
+                <InputNumber id="recipe-servings"
+                             class="form-control"
+                             @bind-Value="recipe.Servings" />
+
+                <ValidationMessage For="() => recipe.Servings"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Image URL -->
+            <div class="mb-4">
+
+                <label for="recipe-image"
+                       class="form-label">
+                    Image URL
+                </label>
+
+                <InputText id="recipe-image"
+                           class="form-control"
+                           placeholder="https://example.com/recipe-image.jpg"
+                           @bind-Value="recipe.ImageUrl" />
+
+                <ValidationMessage For="() => recipe.ImageUrl"
+                                   class="text-danger" />
+
+            </div>
+
+            <!-- Form actions -->
+            <div class="d-flex gap-2">
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    <i class="bi bi-save me-1"
+                       aria-hidden="true"></i>
+
+                    Update Recipe
+
+                </button>
+
+                <a href="/recipes"
+                   class="btn btn-secondary">
+
+                    Cancel
+
+                </a>
+
+            </div>
+
+        </EditForm>
+    }
+
+</div>
+
+@code
 {
-    <p>Loading...</p>
-}
-else if (!isOwner)
-{
-    <p>You are not authorized to edit this recipe.</p>
-}
-else
-{
-    <EditForm Model="recipe" OnValidSubmit="HandleSubmit" FormName="EditRecipeForm">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-
-        <div class="mb-3">
-            <label class="form-label">Name</label>
-            <InputText class="form-control" @bind-Value="recipe.Name" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Description</label>
-            <InputTextArea class="form-control" @bind-Value="recipe.Description" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Category</label>
-            <InputSelect class="form-control" @bind-Value="recipe.CategoryId">
-                <option value="0">Select Category...</option>
-                @foreach (var category in categories)
-                {
-                    <option value="@category.Id">@category.Name</option>
-                }
-            </InputSelect>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Ingredients</label>
-            <InputTextArea class="form-control" @bind-Value="recipe.Ingredients" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Instructions</label>
-            <InputTextArea class="form-control" @bind-Value="recipe.Instructions" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Preparation Time (mins)</label>
-            <InputNumber class="form-control" @bind-Value="recipe.PreparationTime" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Cooking Time (mins)</label>
-            <InputNumber class="form-control" @bind-Value="recipe.CookingTime" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Servings</label>
-            <InputNumber class="form-control" @bind-Value="recipe.Servings" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Image URL</label>
-            <InputText class="form-control" @bind-Value="recipe.ImageUrl" />
-        </div>
-
-        <button type="submit" class="btn btn-primary">Update</button>
-        <a href="/recipes" class="btn btn-secondary">Cancel</a>
-    </EditForm>
-}
-
-@code {
+    /// <summary>
+    /// Recipe ID supplied through the URL.
+    /// </summary>
     [Parameter]
     public int Id { get; set; }
 
+    /// <summary>
+    /// Recipe currently being edited.
+    /// </summary>
     [SupplyParameterFromForm]
     private Recipe? recipe { get; set; }
+
+    // Available recipe categories.
     private List<Category> categories = new();
+
+    // Determines whether the authenticated user owns the recipe.
     private bool isOwner;
 
+    /// <summary>
+    /// Loads the recipe, categories, and ownership information.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
-        if (recipe == null)
-        {
-            recipe = await RecipeService.GetRecipeByIdAsync(Id);
-        }
+        // Retrieve the recipe selected by the URL ID.
+        recipe = await RecipeService.GetRecipeByIdAsync(Id);
+
+        // Retrieve available categories.
         categories = await RecipeService.GetCategoriesAsync();
 
-        AuthenticationState authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        // Retrieve the current authentication state.
+        AuthenticationState authState =
+            await AuthStateProvider.GetAuthenticationStateAsync();
+
         ClaimsPrincipal user = authState.User;
 
-        if (user.Identity?.IsAuthenticated ?? false)
+        // Check whether the current user is authenticated.
+        if (!(user.Identity?.IsAuthenticated ?? false))
         {
-            string? userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (recipe != null && recipe.UserId == userId)
-            {
-                isOwner = true;
-            }
+            return;
+        }
+
+        // Retrieve the current user's Identity ID.
+        string? userId =
+            user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        // Confirm that the recipe belongs to the current user.
+        if (recipe != null &&
+            !string.IsNullOrWhiteSpace(userId) &&
+            recipe.UserId == userId)
+        {
+            isOwner = true;
         }
     }
 
+    /// <summary>
+    /// Saves the updated recipe after validation and ownership
+    /// verification.
+    /// </summary>
     private async Task HandleSubmit()
     {
-        if (recipe != null && isOwner)
+        // Never update a missing recipe or a recipe
+        // belonging to another user.
+        if (recipe == null || !isOwner)
         {
-            await RecipeService.UpdateRecipeAsync(recipe);
-            NavigationManager.NavigateTo("/recipes", forceLoad: true);
+            return;
         }
+
+        // Save the updated recipe.
+        await RecipeService.UpdateRecipeAsync(recipe);
+
+        // Return to the recipe list after a successful update.
+        NavigationManager.NavigateTo("/recipes");
     }
 }
