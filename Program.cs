@@ -21,6 +21,8 @@ using ChefConnect.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using ChefConnect.Components.Account;
+using ChefConnect.Services;
+using Microsoft.Extensions.FileProviders;
 using System.Linq.Expressions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -115,6 +117,24 @@ app.UseHttpsRedirection();
 
 // Serve CSS, JavaScript, images, and other static assets.
 app.MapStaticAssets();
+
+//
+// ===========================================================
+// Serve uploaded recipe images.
+//
+// MapStaticAssets only serves the files that existed when the
+// application was built, so the uploads folder is served
+// separately. This allows an image uploaded by a user to be
+// displayed immediately without restarting the application.
+// ===========================================================
+//
+var recipeUploadsPath = RecipeImageService.EnsureUploadsDirectory(app.Environment);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(recipeUploadsPath),
+    RequestPath = RecipeImageService.UploadsRequestPath
+});
 
 //
 // ===========================================================

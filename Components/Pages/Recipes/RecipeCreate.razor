@@ -4,10 +4,12 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @using ChefConnect.Models
+@using ChefConnect.Services
 
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IWebHostEnvironment Environment
 
 <!--
 ===========================================================
@@ -201,23 +203,13 @@ recipe before it is saved.
 
         </div>
 
-        <!-- Image URL -->
-        <div class="mb-4">
-
-            <label for="recipe-image"
-                   class="form-label">
-                Image URL
-            </label>
-
-            <InputText id="recipe-image"
-                       class="form-control"
-                       placeholder="https://example.com/recipe-image.jpg"
-                       @bind-Value="recipe.ImageUrl" />
-
-            <ValidationMessage For="() => recipe.ImageUrl"
-                               class="text-danger" />
-
-        </div>
+        <!--
+        Recipe image.
+        The user may upload a file or supply an image URL.
+        -->
+        <RecipeImageInput @bind-ImageUrl="imageUrl"
+                          @bind-SelectedFile="selectedImage"
+                          @bind-ErrorMessage="imageErrorMessage" />
 
         <!-- Form buttons -->
         <div class="d-flex gap-2">
@@ -254,6 +246,15 @@ recipe before it is saved.
     // Stores the available recipe categories.
     private List<Category> categories = new();
 
+    // Externally hosted image URL entered by the user.
+    private string? imageUrl;
+
+    // Image selected from the user's computer, if any.
+    private IBrowserFile? selectedImage;
+
+    // Validation message for the recipe image.
+    private string? imageErrorMessage;
+
     /// <summary>
     /// Loads the available recipe categories when the page opens.
     /// </summary>
@@ -267,6 +268,13 @@ recipe before it is saved.
     /// </summary>
     private async Task HandleSubmit()
     {
+        // Apply the image before anything is saved so an invalid
+        // image stops the recipe from being created.
+        if (!await ApplyRecipeImageAsync())
+        {
+            return;
+        }
+
         // Retrieve the current authentication state.
         var authState =
             await AuthStateProvider.GetAuthenticationStateAsync();
@@ -291,5 +299,71 @@ recipe before it is saved.
 
         // Return to the recipe list after successful creation.
         NavigationManager.NavigateTo("/recipes");
+    }
+
+    /// <summary>
+    /// Applies the chosen recipe image.
+    ///
+    /// An uploaded image takes priority over the image URL. When no
+    /// image is provided the recipe is saved without one.
+    /// </summary>
+    /// <returns>
+    /// True when the image is valid and the recipe can be saved.
+    /// </returns>
+    private async Task<bool> ApplyRecipeImageAsync()
+    {
+        imageErrorMessage = null;
+
+        // An uploaded image always wins over the image URL.
+        if (selectedImage is not null)
+        {
+            var fileMessage =
+                RecipeImageService.GetFileValidationMessage(selectedImage);
+
+            if (fileMessage is not null)
+            {
+                imageErrorMessage = fileMessage;
+
+                return false;
+            }
+
+            try
+            {
+                recipe.ImageUrl =
+                    await RecipeImageService.SaveUploadedImageAsync(
+                        Environment,
+                        selectedImage);
+
+                return true;
+            }
+            catch (Exception)
+            {
+                imageErrorMessage =
+                    "The image could not be uploaded. Please try again.";
+
+                return false;
+            }
+        }
+
+        // Otherwise fall back to the image URL when one was entered.
+        if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            if (!RecipeImageService.IsValidExternalImageUrl(imageUrl))
+            {
+                imageErrorMessage =
+                    "Enter a valid image URL that starts with http:// or https://.";
+
+                return false;
+            }
+
+            recipe.ImageUrl = imageUrl.Trim();
+
+            return true;
+        }
+
+        // The image is optional, so the recipe is saved without one.
+        recipe.ImageUrl = null;
+
+        return true;
     }
 }

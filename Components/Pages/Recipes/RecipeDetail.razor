@@ -3,6 +3,7 @@
 
 @using System.Security.Claims
 @using ChefConnect.Models
+@using ChefConnect.Services
 @using Microsoft.AspNetCore.Components.Authorization
 
 @inject RecipeService RecipeService
@@ -62,11 +63,15 @@ recipes belonging to another user.
     {
         <article>
 
-            <!-- Recipe image -->
-            @if (!string.IsNullOrWhiteSpace(Recipe.ImageUrl))
+            <!--
+            Recipe image.
+            Externally hosted images and images uploaded to the
+            application are both displayed here.
+            -->
+            @if (!string.IsNullOrWhiteSpace(imageSource))
             {
                 <img class="recipe-image img-fluid rounded"
-                     src="@Recipe.ImageUrl"
+                     src="@imageSource"
                      alt="@Recipe.Name"
                      loading="lazy" />
             }
@@ -293,6 +298,10 @@ recipes belonging to another user.
     // Stores the recipe retrieved from the database.
     private Recipe? Recipe;
 
+    // Image source resolved from the stored recipe image value.
+    // This supports external URLs and uploaded images.
+    private string? imageSource;
+
     // Stores the authenticated user's Identity ID.
     private string? userId;
 
@@ -316,6 +325,10 @@ recipes belonging to another user.
     {
         // Retrieve the recipe from the database.
         Recipe = await RecipeService.GetRecipeByIdAsync(Id);
+
+        // Resolve the image that should be displayed for the recipe.
+        imageSource =
+            RecipeImageService.ResolveImageSource(Recipe?.ImageUrl);
 
         // Retrieve the current authentication state.
         AuthenticationState authState =

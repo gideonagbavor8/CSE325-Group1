@@ -1,0 +1,308 @@
+@using ChefConnect.Services
+
+<!--
+===========================================================
+ChefConnect - Recipe Image Input
+
+Purpose:
+Collects the image for a recipe. The user may either upload
+an image from their computer or paste an externally hosted
+image URL. Both options are optional.
+
+If a file is uploaded and an image URL is also entered, the
+uploaded image takes priority. The priority rule itself is
+applied by the page that saves the recipe.
+===========================================================
+-->
+
+<div class="mb-4">
+
+    <span class="form-label d-block fw-semibold">
+        Recipe Image
+    </span>
+
+    <p class="text-muted small mb-2">
+        Optional. Choose <strong>one</strong> of the options below.
+        If you do both, the uploaded image is used.
+    </p>
+
+    <div class="recipe-image-input">
+
+        <!-- Option 1: upload from the user's computer -->
+        <div class="recipe-image-option">
+
+            <label for="recipe-image-file"
+                   class="form-label">
+                Upload from your computer
+            </label>
+
+            <InputFile id="recipe-image-file"
+                       class="form-control"
+                       accept="@RecipeImageService.AcceptedFileTypes"
+                       OnChange="HandleFileSelected" />
+
+            <div class="form-text">
+                JPG, JPEG, PNG, or WEBP. Maximum size 5 MB.
+            </div>
+
+            @if (SelectedFile is not null)
+            {
+                <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+
+                    <span class="small text-muted text-break">
+                        Selected: @SelectedFile.Name
+                    </span>
+
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            @onclick="ClearSelectedFile">
+
+                        Remove file
+
+                    </button>
+
+                </div>
+            }
+
+        </div>
+
+        <!-- Separator between the two options -->
+        <div class="recipe-image-separator"
+             aria-hidden="true">
+
+            <span>OR</span>
+
+        </div>
+
+        <!-- Option 2: an externally hosted image URL -->
+        <div class="recipe-image-option">
+
+            <label for="recipe-image-url"
+                   class="form-label">
+                Image URL
+            </label>
+
+            <InputText id="recipe-image-url"
+                       class="form-control"
+                       placeholder="https://example.com/recipe-image.jpg"
+                       Value="@ImageUrl"
+                       ValueExpression="() => ImageUrl"
+                       ValueChanged="HandleImageUrlChanged" />
+
+            <div class="form-text">
+                Link to an image that is already hosted online.
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Image validation feedback -->
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="text-danger mt-2"
+             role="alert">
+
+            @ErrorMessage
+
+        </div>
+    }
+
+    <!-- Preview of the image that will be saved -->
+    @if (!string.IsNullOrWhiteSpace(previewSource))
+    {
+        <div class="recipe-image-preview mt-3">
+
+            <span class="form-label d-block">
+                @previewLabel
+            </span>
+
+            <img class="recipe-image-preview-img rounded"
+                 src="@previewSource"
+                 alt="Preview of the selected recipe image" />
+
+        </div>
+    }
+
+</div>
+
+@code
+{
+    /// <summary>
+    /// Externally hosted image URL entered by the user.
+    /// </summary>
+    [Parameter]
+    public string? ImageUrl { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ImageUrlChanged { get; set; }
+
+    /// <summary>
+    /// Image chosen from the user's computer, if any.
+    /// </summary>
+    [Parameter]
+    public IBrowserFile? SelectedFile { get; set; }
+
+    [Parameter]
+    public EventCallback<IBrowserFile?> SelectedFileChanged { get; set; }
+
+    /// <summary>
+    /// Validation message displayed under the image options.
+    /// </summary>
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ErrorMessageChanged { get; set; }
+
+    /// <summary>
+    /// Image already saved on the recipe. Used by the edit page so
+    /// the current image is still visible while editing.
+    /// </summary>
+    [Parameter]
+    public string? CurrentImageUrl { get; set; }
+
+    // Data URL of the preview generated for the chosen file.
+    private string? uploadPreview;
+
+    // Image currently displayed in the preview area.
+    private string? previewSource;
+
+    // Describes what the preview is showing.
+    private string previewLabel = "Preview";
+
+    /// <summary>
+    /// Refreshes the preview whenever the parent supplies new values.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        UpdatePreview();
+    }
+
+    /// <summary>
+    /// Validates the chosen file and creates a preview for it.
+    /// </summary>
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        uploadPreview = null;
+
+        var validationMessage =
+            RecipeImageService.GetFileValidationMessage(file);
+
+        if (validationMessage is not null)
+        {
+            // Rejected files are never kept, so an invalid file can
+            // not be submitted with the form.
+            await SetSelectedFileAsync(null);
+            await SetErrorMessageAsync(validationMessage);
+
+            UpdatePreview();
+
+            return;
+        }
+
+        await SetSelectedFileAsync(file);
+        await SetErrorMessageAsync(null);
+
+        uploadPreview = await RecipeImageService.CreatePreviewAsync(file);
+
+        UpdatePreview();
+    }
+
+    /// <summary>
+    /// Clears the chosen file so the image URL is used instead.
+    /// </summary>
+    private async Task ClearSelectedFile()
+    {
+        uploadPreview = null;
+
+        await SetSelectedFileAsync(null);
+        await SetErrorMessageAsync(null);
+
+        UpdatePreview();
+    }
+
+    /// <summary>
+    /// Stores the image URL entered by the user.
+    /// </summary>
+    private async Task HandleImageUrlChanged(string? value)
+    {
+        ImageUrl = value;
+
+        if (ImageUrlChanged.HasDelegate)
+        {
+            await ImageUrlChanged.InvokeAsync(value);
+        }
+
+        if (!RecipeImageService.IsValidExternalImageUrl(value))
+        {
+            await SetErrorMessageAsync(
+                "Enter a valid image URL that starts with http:// or https://.");
+        }
+        else if (!string.IsNullOrWhiteSpace(ErrorMessage) && SelectedFile is null)
+        {
+            await SetErrorMessageAsync(null);
+        }
+
+        UpdatePreview();
+    }
+
+    /// <summary>
+    /// Chooses the image shown in the preview area.
+    /// The uploaded image always wins, which matches the rule
+    /// applied when the recipe is saved.
+    /// </summary>
+    private void UpdatePreview()
+    {
+        if (SelectedFile is not null && !string.IsNullOrWhiteSpace(uploadPreview))
+        {
+            previewSource = uploadPreview;
+            previewLabel = "Preview of the uploaded image";
+
+            return;
+        }
+
+        if (SelectedFile is null
+            && RecipeImageService.IsValidExternalImageUrl(ImageUrl)
+            && !string.IsNullOrWhiteSpace(ImageUrl))
+        {
+            previewSource = RecipeImageService.ResolveImageSource(ImageUrl);
+            previewLabel = "Preview of the image URL";
+
+            return;
+        }
+
+        if (SelectedFile is null)
+        {
+            previewSource = RecipeImageService.ResolveImageSource(CurrentImageUrl);
+            previewLabel = "Current recipe image";
+
+            return;
+        }
+
+        // A file is selected but the browser could not build a preview.
+        previewSource = null;
+    }
+
+    private async Task SetSelectedFileAsync(IBrowserFile? file)
+    {
+        SelectedFile = file;
+
+        if (SelectedFileChanged.HasDelegate)
+        {
+            await SelectedFileChanged.InvokeAsync(file);
+        }
+    }
+
+    private async Task SetErrorMessageAsync(string? message)
+    {
+        ErrorMessage = message;
+
+        if (ErrorMessageChanged.HasDelegate)
+        {
+            await ErrorMessageChanged.InvokeAsync(message);
+        }
+    }
+}

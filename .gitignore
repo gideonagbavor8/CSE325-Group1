@@ -434,3 +434,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Recipe images uploaded by users at runtime
+wwwroot/uploads/

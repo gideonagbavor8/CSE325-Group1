@@ -4,10 +4,12 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @using ChefConnect.Models
+@using ChefConnect.Services
 
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IWebHostEnvironment Environment
 
 <!--
 ===========================================================
@@ -256,23 +258,15 @@ Data Annotations.
 
             </div>
 
-            <!-- Image URL -->
-            <div class="mb-4">
-
-                <label for="recipe-image"
-                       class="form-label">
-                    Image URL
-                </label>
-
-                <InputText id="recipe-image"
-                           class="form-control"
-                           placeholder="https://example.com/recipe-image.jpg"
-                           @bind-Value="recipe.ImageUrl" />
-
-                <ValidationMessage For="() => recipe.ImageUrl"
-                                   class="text-danger" />
-
-            </div>
+            <!--
+            Recipe image.
+            The user may upload a replacement file or supply an
+            image URL. Leaving both empty keeps the current image.
+            -->
+            <RecipeImageInput @bind-ImageUrl="imageUrl"
+                              @bind-SelectedFile="selectedImage"
+                              @bind-ErrorMessage="imageErrorMessage"
+                              CurrentImageUrl="@existingImageUrl" />
 
             <!-- Form actions -->
             <div class="d-flex gap-2">
@@ -321,6 +315,18 @@ Data Annotations.
     // Determines whether the authenticated user owns the recipe.
     private bool isOwner;
 
+    // Externally hosted image URL entered by the user.
+    private string? imageUrl;
+
+    // Image selected from the user's computer, if any.
+    private IBrowserFile? selectedImage;
+
+    // Validation message for the recipe image.
+    private string? imageErrorMessage;
+
+    // Image already saved on the recipe.
+    private string? existingImageUrl;
+
     /// <summary>
     /// Loads the recipe, categories, and ownership information.
     /// </summary>
@@ -328,6 +334,16 @@ Data Annotations.
     {
         // Retrieve the recipe selected by the URL ID.
         recipe = await RecipeService.GetRecipeByIdAsync(Id);
+
+        // Remember the saved image so it can be kept when the user
+        // does not choose a new one.
+        existingImageUrl = recipe?.ImageUrl;
+
+        // Uploaded images are stored as a local path, so only an
+        // external URL is placed back into the Image URL field.
+        imageUrl = RecipeImageService.IsUploadedImagePath(existingImageUrl)
+            ? null
+            : existingImageUrl;
 
         // Retrieve available categories.
         categories = await RecipeService.GetCategoriesAsync();
@@ -370,10 +386,93 @@ Data Annotations.
             return;
         }
 
+        // Apply the image before saving so an invalid image stops
+        // the update.
+        if (!await ApplyRecipeImageAsync())
+        {
+            return;
+        }
+
         // Save the updated recipe.
         await RecipeService.UpdateRecipeAsync(recipe);
 
         // Return to the recipe list after a successful update.
         NavigationManager.NavigateTo("/recipes");
+    }
+
+    /// <summary>
+    /// Applies the chosen recipe image.
+    ///
+    /// An uploaded image takes priority over the image URL. When
+    /// neither is supplied the recipe keeps the image it already
+    /// had, unless the user cleared an existing image URL.
+    /// </summary>
+    /// <returns>
+    /// True when the image is valid and the recipe can be saved.
+    /// </returns>
+    private async Task<bool> ApplyRecipeImageAsync()
+    {
+        if (recipe == null)
+        {
+            return false;
+        }
+
+        imageErrorMessage = null;
+
+        // An uploaded image always wins over the image URL.
+        if (selectedImage is not null)
+        {
+            var fileMessage =
+                RecipeImageService.GetFileValidationMessage(selectedImage);
+
+            if (fileMessage is not null)
+            {
+                imageErrorMessage = fileMessage;
+
+                return false;
+            }
+
+            try
+            {
+                recipe.ImageUrl =
+                    await RecipeImageService.SaveUploadedImageAsync(
+                        Environment,
+                        selectedImage);
+
+                return true;
+            }
+            catch (Exception)
+            {
+                imageErrorMessage =
+                    "The image could not be uploaded. Please try again.";
+
+                return false;
+            }
+        }
+
+        // Otherwise use the image URL when one was entered.
+        if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            if (!RecipeImageService.IsValidExternalImageUrl(imageUrl))
+            {
+                imageErrorMessage =
+                    "Enter a valid image URL that starts with http:// or https://.";
+
+                return false;
+            }
+
+            recipe.ImageUrl = imageUrl.Trim();
+
+            return true;
+        }
+
+        // Nothing was supplied. An uploaded image is kept, while a
+        // cleared image URL removes the image.
+        recipe.ImageUrl =
+            RecipeImageService.IsUploadedImagePath(existingImageUrl)
+                ? existingImageUrl
+                : null;
+
+        return true;
     }
 }

@@ -1,10 +1,14 @@
 ﻿@page "/"
 @rendermode InteractiveServer
+@using System.Security.Claims
 @using ChefConnect.Components.Pages.HomeComponents
 @using ChefConnect.Data
 @using ChefConnect.Models
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @inject ApplicationDbContext DbContext
+@inject RecipeService RecipeService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <h1>Find a recipe</h1>
 
@@ -74,7 +78,10 @@ else
 		@foreach (var recipe in FilteredRecipes)
 		{
 			<div class="col">
-				<RecipeCard Recipe="@recipe" />
+				<RecipeCard Recipe="@recipe"
+							ShowFavoriteButton="@isAuthenticated"
+							IsFavorite="@favoriteIds.Contains(recipe.Id)"
+							OnToggleFavorite="ToggleFavorite" />
 			</div>
 		}
 	</div>
@@ -85,6 +92,12 @@ else
 	private List<Category> categories = new();
 	private string searchText = string.Empty;
 	private string selectedCategoryId = string.Empty;
+
+	// Favorites are kept separate from the recipe list so that
+	// favoriting a recipe never changes what the search returns.
+	private bool isAuthenticated;
+	private string? userId;
+	private HashSet<int> favoriteIds = new();
 
 	private bool ShouldShowMealCard(string mealName) =>
 		string.IsNullOrWhiteSpace(searchText) ||
@@ -119,6 +132,50 @@ else
 			.Include(recipe => recipe.Category)
 			.OrderBy(recipe => recipe.Name)
 			.ToListAsync();
+
+		// Load which of those recipes the current user has favorited.
+		// This only decides how the heart is drawn. The recipe list
+		// itself is never filtered by favorites.
+		var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+		if (isAuthenticated)
+		{
+			userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+			if (!string.IsNullOrWhiteSpace(userId))
+			{
+				favoriteIds = await RecipeService.GetFavoriteRecipeIdsAsync(userId);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Adds or removes a recipe from the current user's favorites.
+	///
+	/// Only the favorite list is updated. The recipes shown on the
+	/// page and the current search are left untouched, so a recipe
+	/// stays in the results after it is favorited.
+	/// </summary>
+	private async Task ToggleFavorite(Recipe recipe)
+	{
+		if (string.IsNullOrWhiteSpace(userId))
+		{
+			return;
+		}
+
+		var isNowFavorite = await RecipeService.ToggleFavoriteAsync(userId, recipe.Id);
+
+		if (isNowFavorite)
+		{
+			favoriteIds.Add(recipe.Id);
+		}
+		else
+		{
+			favoriteIds.Remove(recipe.Id);
+		}
 	}
 }
 
