@@ -61,7 +61,7 @@ recipes belonging to another user.
     }
     else
     {
-        <article>
+        <article class="recipe-detail-container">
 
             <!--
             Recipe image.
@@ -70,24 +70,24 @@ recipes belonging to another user.
             -->
             @if (!string.IsNullOrWhiteSpace(imageSource))
             {
-                <img class="recipe-image img-fluid rounded"
+                <img class="recipe-image-detail"
                      src="@imageSource"
                      alt="@Recipe.Name"
                      loading="lazy" />
             }
             else
             {
-                <div class="recipe-image-placeholder"
+                <div class="recipe-detail-placeholder"
                      role="img"
                      aria-label="No recipe photo available">
 
-                    No photo
+                    <i class="bi bi-image" aria-hidden="true"></i>
 
                 </div>
             }
 
             <!-- Recipe title -->
-            <h1 class="recipe-detail-name mt-4">
+            <h1 class="recipe-detail-name">
                 @Recipe.Name
             </h1>
 
@@ -97,78 +97,56 @@ recipes belonging to another user.
             </p>
 
             <!-- Basic recipe information -->
-            <div class="row g-3 my-4">
+            <div class="recipe-detail-meta">
 
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h2 class="h6">Servings</h2>
-                            <p class="mb-0">
-                                @Recipe.Servings
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <span class="recipe-chip">
+                    <i class="bi bi-people" aria-hidden="true"></i>
+                    Serves @Recipe.Servings
+                </span>
 
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h2 class="h6">Preparation Time</h2>
-                            <p class="mb-0">
-                                @Recipe.PreparationTime minutes
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <span class="recipe-chip">
+                    <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                    @Recipe.PreparationTime min prep
+                </span>
 
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h2 class="h6">Cooking Time</h2>
-                            <p class="mb-0">
-                                @Recipe.CookingTime minutes
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <span class="recipe-chip">
+                    <i class="bi bi-fire" aria-hidden="true"></i>
+                    @Recipe.CookingTime min cooking
+                </span>
+
+                @if (Recipe.Category is not null)
+                {
+                    <span class="recipe-chip">
+                        <i class="bi bi-tag" aria-hidden="true"></i>
+                        @Recipe.Category.Name
+                    </span>
+                }
 
             </div>
 
             <!-- Ingredients -->
-            <section class="mb-4">
+            <section class="recipe-detail-section">
 
-                <h2 class="h4">
+                <h2 class="h5">
                     Ingredients
                 </h2>
 
-                <div class="card">
-                    <div class="card-body">
-
-                        <p class="mb-0">
-                            @Recipe.Ingredients
-                        </p>
-
-                    </div>
-                </div>
+                <p class="recipe-detail-text">
+                    @Recipe.Ingredients
+                </p>
 
             </section>
 
             <!-- Instructions -->
-            <section class="mb-4">
+            <section class="recipe-detail-section">
 
-                <h2 class="h4">
+                <h2 class="h5">
                     Instructions
                 </h2>
 
-                <div class="card">
-                    <div class="card-body">
-
-                        <p class="mb-0">
-                            @Recipe.Instructions
-                        </p>
-
-                    </div>
-                </div>
+                <p class="recipe-detail-text">
+                    @Recipe.Instructions
+                </p>
 
             </section>
 
@@ -191,46 +169,20 @@ recipes belonging to another user.
 
                     </a>
 
-                    @if (confirmDelete)
-                    {
-                        <!--
-                        Second step of the delete process.
-                        The recipe is not deleted until the user confirms.
-                        -->
+                    <!--
+                    Selecting Delete opens the confirmation dialog.
+                    The recipe is not removed until it is confirmed.
+                    -->
+                    <button type="button"
+                            class="btn btn-danger"
+                            @onclick="RequestDelete">
 
-                        <button type="button"
-                                class="btn btn-danger"
-                                @onclick="DeleteRecipe">
+                        <i class="bi bi-trash me-1"
+                           aria-hidden="true"></i>
 
-                            <i class="bi bi-check-circle me-1"
-                               aria-hidden="true"></i>
+                        Delete
 
-                            Yes, Delete
-
-                        </button>
-
-                        <button type="button"
-                                class="btn btn-secondary"
-                                @onclick="CancelDelete">
-
-                            Cancel
-
-                        </button>
-                    }
-                    else
-                    {
-                        <!-- Initial delete button -->
-                        <button type="button"
-                                class="btn btn-danger"
-                                @onclick="RequestDelete">
-
-                            <i class="bi bi-trash me-1"
-                               aria-hidden="true"></i>
-
-                            Delete
-
-                        </button>
-                    }
+                    </button>
                 }
 
                 @if (isAuthenticated)
@@ -268,21 +220,15 @@ recipes belonging to another user.
 
             </div>
 
-            @if (confirmDelete)
-            {
-                <!-- Delete warning -->
-                <div class="alert alert-warning mt-3"
-                     role="alert">
-
-                    <strong>Are you sure?</strong>
-
-                    This action will permanently delete
-                    <strong>@Recipe.Name</strong>.
-
-                </div>
-            }
-
         </article>
+
+        <!-- Delete confirmation, shown over the page as a modal -->
+        <ConfirmDialog IsOpen="@confirmDelete"
+                       Title="Delete this recipe?"
+                       Message="@($"\"{Recipe.Name}\" will be permanently removed. This cannot be undone.")"
+                       ConfirmText="Yes, delete"
+                       OnConfirm="DeleteRecipe"
+                       OnCancel="CancelDelete" />
     }
 
 </div>
@@ -395,7 +341,8 @@ recipes belonging to another user.
             return;
         }
 
-        await RecipeService.DeleteRecipeAsync(Recipe.Id);
+        // The service checks ownership again before removing anything.
+        await RecipeService.DeleteRecipeAsync(Recipe.Id, userId);
 
         // Return to the recipe list after successful deletion.
         NavigationManager.NavigateTo("/recipes");

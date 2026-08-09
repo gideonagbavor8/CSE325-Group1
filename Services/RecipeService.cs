@@ -126,17 +126,27 @@ public class RecipeService
     }
 
     /// <summary>
-    /// Updates an existing recipe.
+    /// Updates an existing recipe on behalf of the user who owns it.
+    ///
+    /// As with deleting, the owner check belongs here so that it
+    /// applies no matter which page calls the method.
     /// </summary>
     /// <param name="recipe">The updated recipe.</param>
-    public async Task UpdateRecipeAsync(Recipe recipe)
+    /// <param name="userId">
+    /// The Identity ID of the user saving the changes.
+    /// </param>
+    /// <returns>
+    /// True when the recipe was updated. False when the user does
+    /// not own it.
+    /// </returns>
+    public async Task<bool> UpdateRecipeAsync(Recipe recipe, string? userId)
     {
         ArgumentNullException.ThrowIfNull(recipe);
 
-        if (string.IsNullOrWhiteSpace(recipe.UserId))
+        // An anonymous visitor can never change a recipe.
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            throw new InvalidOperationException(
-                "A recipe must have an owner.");
+            return false;
         }
 
         var existingRecipe = await _context.Recipes
@@ -148,6 +158,16 @@ public class RecipeService
             throw new InvalidOperationException(
                 "The recipe could not be found.");
         }
+
+        // Only the user who created the recipe may change it.
+        if (!string.Equals(existingRecipe.UserId, userId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // The owner is taken from the stored recipe so that a form
+        // post can never move a recipe to another account.
+        recipe.UserId = existingRecipe.UserId;
 
         var categoryExists = await _context.Categories
             .AnyAsync(c => c.Id == recipe.CategoryId);
@@ -163,25 +183,52 @@ public class RecipeService
 
         // Save changes.
         await _context.SaveChangesAsync();
+
+        return true;
     }
 
     /// <summary>
-    /// Deletes a recipe using its ID.
+    /// Deletes a recipe on behalf of the user who owns it.
+    ///
+    /// The owner check is performed here rather than in the pages
+    /// so that a recipe can never be removed by hiding a button or
+    /// by calling this method from somewhere else.
     /// </summary>
     /// <param name="id">The recipe ID.</param>
-    public async Task DeleteRecipeAsync(int id)
+    /// <param name="userId">
+    /// The Identity ID of the user asking for the deletion.
+    /// </param>
+    /// <returns>
+    /// True when the recipe was deleted. False when the recipe does
+    /// not exist, or the user does not own it.
+    /// </returns>
+    public async Task<bool> DeleteRecipeAsync(int id, string? userId)
     {
+        // An anonymous visitor can never delete a recipe.
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return false;
+        }
+
         var recipe = await _context.Recipes
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (recipe == null)
         {
-            return;
+            return false;
+        }
+
+        // Only the user who created the recipe may delete it.
+        if (!string.Equals(recipe.UserId, userId, StringComparison.Ordinal))
+        {
+            return false;
         }
 
         _context.Recipes.Remove(recipe);
 
         await _context.SaveChangesAsync();
+
+        return true;
     }
 
     // =========================================================

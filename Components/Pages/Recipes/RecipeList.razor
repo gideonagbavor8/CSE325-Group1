@@ -1,9 +1,13 @@
 @page "/recipes"
 @rendermode InteractiveServer
 
+@using System.Security.Claims
 @using ChefConnect.Models
+@using ChefConnect.Services
+@using Microsoft.AspNetCore.Components.Authorization
 
 @inject RecipeService RecipeService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <!--
 ===========================================================
@@ -24,10 +28,10 @@ to help prevent accidental deletion of recipes.
 
     <!-- Page heading and create-recipe button -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
+        <div class="page-intro mb-0">
             <h1>Recipes</h1>
 
-            <p class="text-muted">
+            <p>
                 Browse and manage recipes in ChefConnect.
             </p>
         </div>
@@ -71,167 +75,169 @@ to help prevent accidental deletion of recipes.
     }
     else
     {
-        <div class="table-responsive">
+        <ul class="recipe-rows">
 
-            <table class="table table-hover align-middle">
+            @foreach (var recipe in recipes)
+            {
+                <li class="recipe-row">
 
-                <thead>
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Category</th>
-                        <th scope="col">Prep Time</th>
-                        <th scope="col">Cook Time</th>
-                        <th scope="col">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @foreach (var recipe in recipes)
+                    <!-- Thumbnail, or a placeholder when there is no image -->
+                    @if (RecipeImageService.ResolveImageSource(recipe.ImageUrl) is { } thumbnail)
                     {
-                        <tr>
+                        <img class="recipe-row-thumb"
+                             src="@thumbnail"
+                             alt=""
+                             loading="lazy" />
+                    }
+                    else
+                    {
+                        <div class="recipe-row-thumb recipe-row-thumb-empty"
+                             aria-hidden="true">
 
-                            <!-- Recipe name -->
-                            <td>
-                                <strong>
-                                    @recipe.Name
-                                </strong>
-                            </td>
+                            <i class="bi bi-image"></i>
 
-                            <!-- Recipe category -->
-                            <td>
-                                @(recipe.Category?.Name ?? "N/A")
-                            </td>
-
-                            <!-- Preparation time -->
-                            <td>
-                                @recipe.PreparationTime mins
-                            </td>
-
-                            <!-- Cooking time -->
-                            <td>
-                                @recipe.CookingTime mins
-                            </td>
-
-                            <!-- Recipe actions -->
-                            <td>
-
-                                <div class="d-flex gap-2 flex-wrap">
-
-                                    <!-- View recipe -->
-                                    <a href="/recipes/@recipe.Id"
-                                       class="btn btn-info btn-sm">
-
-                                        <i class="bi bi-eye me-1"
-                                           aria-hidden="true"></i>
-
-                                        View
-                                    </a>
-
-                                    <!-- Edit recipe -->
-                                    <a href="/recipes/edit/@recipe.Id"
-                                       class="btn btn-warning btn-sm">
-
-                                        <i class="bi bi-pencil me-1"
-                                           aria-hidden="true"></i>
-
-                                        Edit
-                                    </a>
-
-                                    @if (confirmDeleteId == recipe.Id)
-                                    {
-                                        <!--
-                                        Confirmation controls are displayed
-                                        after the user initially selects Delete.
-                                        -->
-
-                                        <span class="text-danger small align-self-center">
-                                            Delete this recipe?
-                                        </span>
-
-                                        <!-- Confirm deletion -->
-                                        <button type="button"
-                                                class="btn btn-danger btn-sm"
-                                                @onclick="() => ConfirmDeleteRecipe(recipe.Id)">
-
-                                            <i class="bi bi-check-circle me-1"
-                                               aria-hidden="true"></i>
-
-                                            Yes, Delete
-                                        </button>
-
-                                        <!-- Cancel deletion -->
-                                        <button type="button"
-                                                class="btn btn-secondary btn-sm"
-                                                @onclick="CancelDelete">
-
-                                            Cancel
-
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <!--
-                                        First step of the deletion process.
-                                        This does NOT delete the recipe.
-                                        It only displays the confirmation controls.
-                                        -->
-                                        <button type="button"
-                                                class="btn btn-danger btn-sm"
-                                                @onclick="() => RequestDelete(recipe.Id)"
-                                                aria-label="Delete @recipe.Name">
-
-                                            <i class="bi bi-trash me-1"
-                                               aria-hidden="true"></i>
-
-                                            Delete
-                                        </button>
-                                    }
-
-                                </div>
-
-                            </td>
-
-                        </tr>
+                        </div>
                     }
 
-                </tbody>
+                    <!-- Recipe summary -->
+                    <div class="recipe-row-info">
 
-            </table>
+                        <a class="recipe-row-name"
+                           href="/recipes/@recipe.Id">
 
-        </div>
-    }
+                            @recipe.Name
 
-    <!-- Operation status message -->
-    @if (!string.IsNullOrWhiteSpace(statusMessage))
-    {
-        <div class="alert alert-success mt-3"
-             role="status">
+                        </a>
 
-            @statusMessage
+                        <div class="recipe-row-meta">
 
-        </div>
+                            <span class="recipe-row-tag">
+                                @(recipe.Category?.Name ?? "Uncategorized")
+                            </span>
+
+                            <span>
+                                <i class="bi bi-clock me-1" aria-hidden="true"></i>
+                                @(recipe.PreparationTime + recipe.CookingTime) mins total
+                            </span>
+
+                            <span>
+                                <i class="bi bi-people me-1" aria-hidden="true"></i>
+                                Serves @recipe.Servings
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- Recipe actions -->
+                    <div class="recipe-row-actions">
+
+                        <a href="/recipes/@recipe.Id"
+                           class="btn btn-outline-secondary btn-sm">
+
+                            <i class="bi bi-eye me-1"
+                               aria-hidden="true"></i>
+
+                            View
+                        </a>
+
+                        @if (IsOwnedByCurrentUser(recipe))
+                        {
+                            <!--
+                            Editing and deleting are only offered on the
+                            recipes belonging to the signed-in user. The
+                            same rule is enforced again in RecipeService.
+                            -->
+                            <a href="/recipes/edit/@recipe.Id"
+                               class="btn btn-outline-primary btn-sm">
+
+                                <i class="bi bi-pencil me-1"
+                                   aria-hidden="true"></i>
+
+                                Edit
+                            </a>
+
+                            <!--
+                            Selecting Delete only opens the confirmation
+                            dialog. Nothing is removed until it is confirmed.
+                            -->
+                            <button type="button"
+                                    class="btn btn-outline-danger btn-sm"
+                                    @onclick="() => RequestDelete(recipe)"
+                                    aria-label="Delete @recipe.Name">
+
+                                <i class="bi bi-trash me-1"
+                                   aria-hidden="true"></i>
+
+                                Delete
+                            </button>
+                        }
+
+                    </div>
+
+                </li>
+            }
+
+        </ul>
     }
 
 </div>
+
+<!--
+Confirmation of the last action. This floats above the page
+and clears itself after a few seconds.
+-->
+<Toast Message="@statusMessage"
+       OnClosed="ClearStatusMessage" />
+
+<!-- Delete confirmation, shown over the page as a modal -->
+<ConfirmDialog IsOpen="@(recipeToDelete is not null)"
+               Title="Delete this recipe?"
+               Message="@($"\"{recipeToDelete?.Name}\" will be permanently removed. This cannot be undone.")"
+               ConfirmText="Yes, delete"
+               OnConfirm="ConfirmDeleteRecipe"
+               OnCancel="CancelDelete" />
 
 @code
 {
     // Stores the recipes retrieved from the database.
     private List<Recipe>? recipes;
 
-    // Stores the ID of the recipe awaiting deletion confirmation.
-    private int? confirmDeleteId;
+    // The recipe awaiting deletion confirmation, if any.
+    // While this is set, the confirmation dialog is displayed.
+    private Recipe? recipeToDelete;
 
     // Provides feedback to the user after an operation.
     private string? statusMessage;
 
+    // Identity ID of the signed-in user, or null when signed out.
+    private string? userId;
+
     /// <summary>
-    /// Loads recipes when the page is first initialized.
+    /// Loads recipes and the current user when the page opens.
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
         await LoadRecipesAsync();
+
+        // The current user decides which recipes offer Edit and
+        // Delete. Signed-out visitors can browse, and nothing more.
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+    }
+
+    /// <summary>
+    /// Determines whether the signed-in user created the recipe.
+    /// </summary>
+    private bool IsOwnedByCurrentUser(Recipe recipe)
+    {
+        return !string.IsNullOrWhiteSpace(userId)
+            && recipe.UserId == userId;
     }
 
     /// <summary>
@@ -243,38 +249,57 @@ to help prevent accidental deletion of recipes.
     }
 
     /// <summary>
-    /// Displays the confirmation controls for the selected recipe.
+    /// Opens the confirmation dialog for the selected recipe.
     /// No deletion occurs at this stage.
     /// </summary>
-    private void RequestDelete(int id)
+    private void RequestDelete(Recipe recipe)
     {
-        confirmDeleteId = id;
+        recipeToDelete = recipe;
         statusMessage = null;
     }
 
     /// <summary>
-    /// Cancels the pending delete operation.
+    /// Closes the dialog without deleting anything.
     /// </summary>
     private void CancelDelete()
     {
-        confirmDeleteId = null;
+        recipeToDelete = null;
     }
 
     /// <summary>
     /// Deletes the selected recipe after the user confirms.
     /// </summary>
-    private async Task ConfirmDeleteRecipe(int id)
+    private async Task ConfirmDeleteRecipe()
     {
-        await RecipeService.DeleteRecipeAsync(id);
+        if (recipeToDelete is null)
+        {
+            return;
+        }
 
-        // Clear the confirmation state after deletion.
-        confirmDeleteId = null;
+        // The service refuses the deletion unless the current user
+        // owns the recipe, so the result is checked here.
+        var deleted = await RecipeService.DeleteRecipeAsync(
+            recipeToDelete.Id,
+            userId);
+
+        // Close the dialog after the attempt.
+        recipeToDelete = null;
 
         // Reload the recipes so the deleted recipe disappears immediately.
         await LoadRecipesAsync();
 
-        // Inform the user that the operation completed successfully.
-        statusMessage = "The recipe was successfully deleted.";
+        statusMessage = deleted
+            ? "The recipe was successfully deleted."
+            : "You can only delete recipes that you created.";
+    }
+
+    /// <summary>
+    /// Hides the confirmation message once the toast has run its
+    /// course or the user dismisses it.
+    /// </summary>
+    private void ClearStatusMessage()
+    {
+        statusMessage = null;
     }
 
     /// <summary>

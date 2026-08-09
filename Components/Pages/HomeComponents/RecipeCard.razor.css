@@ -5,9 +5,29 @@
   border-radius: 10px 10px 0 0;
 }
 
+/* Keeps cards without a photo the same height as the rest */
 .recipe-image-placeholder {
-  text-align: center;
-  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  color: #8a8a8a;
+  background: #f7f4f1;
+  border-radius: 10px 10px 0 0;
+}
+
+.recipe-title {
+  font-family: var(--header-text);
+  font-size: 1.15rem;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+
+.recipe-servings,
+.recipe-time {
+  color: #5c5c5c;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
 }
 
 .watch-emoji {
@@ -53,5 +73,9 @@ B.O. Got help from Copilot on implementing this mobile breakpoint.  I typed ever
     height: 180px;
     width: 100%;
     object-fit: cover;
+  }
+
+  .recipe-image-placeholder {
+    height: 180px;
   }
 }

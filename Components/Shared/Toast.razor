@@ -1,0 +1,154 @@
+@implements IDisposable
+
+@*
+===========================================================
+ChefConnect - Toast
+
+Purpose:
+Shows a short confirmation message in a small card that
+floats above the page and disappears on its own after a
+few seconds. Used to confirm actions such as deleting a
+recipe, where the message should be noticed without the
+user having to look for it.
+
+The parent owns the message. When the time is up, or the
+user dismisses the toast, OnClosed is raised so the parent
+can clear it.
+===========================================================
+*@
+
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <div class="toast-layer">
+
+        <div class="toast-card"
+             role="status"
+             aria-live="polite">
+
+            <i class="bi @Icon toast-card-icon"
+               aria-hidden="true"></i>
+
+            <span class="toast-card-text">
+                @Message
+            </span>
+
+            <button type="button"
+                    class="toast-card-close"
+                    aria-label="Dismiss message"
+                    @onclick="CloseAsync">
+
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@code
+{
+    /// <summary>
+    /// Message to display. The toast is hidden when this is empty.
+    /// </summary>
+    [Parameter]
+    public string? Message { get; set; }
+
+    /// <summary>
+    /// Bootstrap icon shown beside the message.
+    /// </summary>
+    [Parameter]
+    public string Icon { get; set; } = "bi-check-circle-fill";
+
+    /// <summary>
+    /// How long the toast stays on screen, in milliseconds.
+    /// </summary>
+    [Parameter]
+    public int DurationMs { get; set; } = 3500;
+
+    /// <summary>
+    /// Raised when the toast should be cleared by the parent.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClosed { get; set; }
+
+    // The message the current countdown belongs to.
+    private string? trackedMessage;
+
+    // Cancels the countdown when the message changes or the
+    // component is removed from the page.
+    private CancellationTokenSource? countdown;
+
+    /// <summary>
+    /// Starts a fresh countdown whenever a new message arrives.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        if (Message == trackedMessage)
+        {
+            return;
+        }
+
+        trackedMessage = Message;
+
+        CancelCountdown();
+
+        if (string.IsNullOrWhiteSpace(Message))
+        {
+            return;
+        }
+
+        countdown = new CancellationTokenSource();
+
+        _ = DismissWhenTimeIsUpAsync(countdown.Token);
+    }
+
+    /// <summary>
+    /// Waits for the display time to pass and then hides the toast.
+    /// </summary>
+    private async Task DismissWhenTimeIsUpAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(DurationMs, token);
+        }
+        catch (OperationCanceledException)
+        {
+            // A new message replaced this one, or the page moved on.
+            return;
+        }
+
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        // Hand the work back to the renderer before touching the UI.
+        await InvokeAsync(CloseAsync);
+    }
+
+    /// <summary>
+    /// Asks the parent to clear the message.
+    /// </summary>
+    private async Task CloseAsync()
+    {
+        CancelCountdown();
+
+        if (OnClosed.HasDelegate)
+        {
+            await OnClosed.InvokeAsync();
+        }
+    }
+
+    private void CancelCountdown()
+    {
+        countdown?.Cancel();
+        countdown?.Dispose();
+        countdown = null;
+    }
+
+    public void Dispose()
+    {
+        CancelCountdown();
+    }
+}
