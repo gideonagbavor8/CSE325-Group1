@@ -1,6 +1,8 @@
 @* Blake O.:  Copilot generated the logo image for me.  I hope this is okay!  (I hope it is because the class isn't really about graphic design, but about creating a .NET application.) *@
 @* Components/Logo.razor *@
-<NavLink href="/" class="chefconnect-logo">
+@* Match="All" so the logo is only marked as the current page on
+   the home page, rather than on every page in the application. *@
+<NavLink href="/" class="chefconnect-logo" Match="NavLinkMatch.All">
     <img src="images/logo.png" alt="ChefConnect Logo" class="chefconnect-logo-img" />
     <span class="chefconnect-logo-text">ChefConnect</span>
 </NavLink>

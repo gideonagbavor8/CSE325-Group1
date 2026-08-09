@@ -10,7 +10,10 @@
 @inject RecipeService RecipeService
 @inject AuthenticationStateProvider AuthStateProvider
 
-<h1>Find a recipe</h1>
+<div class="page-intro">
+	<h1>Find a recipe</h1>
+	<p>Search the ChefConnect collection by name or browse a category.</p>
+</div>
 
 <div class="search-section">
 	<div class="row g-3 mb-4" role="search">
@@ -66,11 +69,17 @@
 
 @if (recipes is null)
 {
-	<p><em>Loading recipes...</em></p>
+	<div class="empty-state">
+		<div class="spinner-border" role="status" aria-label="Loading recipes"></div>
+		<p class="mt-2 mb-0">Loading recipes...</p>
+	</div>
 }
 else if (!FilteredRecipes.Any())
 {
-	<p class="text-muted">No recipes match your search.</p>
+	<div class="empty-state">
+		<i class="bi bi-search" aria-hidden="true"></i>
+		<p class="mb-0">No recipes match your search. Try a different word or select All categories.</p>
+	</div>
 }
 else
 {
@@ -86,6 +95,10 @@ else
 		}
 	</div>
 }
+
+@* Help for common questions. Kept last so it never gets in the
+   way of searching and browsing recipes above. *@
+<FaqSection />
 
 @code {
 	private List<Recipe>? recipes;

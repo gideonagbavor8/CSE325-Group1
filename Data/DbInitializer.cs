@@ -1,103 +1,112 @@
-/*
- * ===========================================================
- * ChefConnect - CSE 325 Group Project
- *
- * File: DbInitializer.cs
- * Contributors:
- *   - Godfred Sefa Aboagye
- *   - Kamohelo Godfrey Mejaele
- *
- * Purpose:
- * Seeds the database with sample users, recipe categories,
- * and recipes for testing and demonstration purposes.
- * ===========================================================
- */
-
-using ChefConnect.Data;
 using ChefConnect.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChefConnect.Data
 {
     /// <summary>
     /// Seeds the database with sample data.
-    /// This ensures the application has initial data
-    /// for testing and demonstration.
     /// </summary>
     public static class DbInitializer
     {
-        // Temp password for the seeded accounts (Identity's default complexity rules).
-        //  Users set their own password through /Register endpoint.
         private const string TempPass = "Passw0rd!";
 
-        public static async Task InitializeAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public static async Task InitializeAsync(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager)
         {
-            // Using Migrate() instead of EnsureCreated() so that schema changes
-            // are tracked through EF Core migrations. EnsureCreated() only creates
-            // the database if it doesn't already exist and cannot apply future
-            // schema changes. Migrate() allows the team to evolve the database
-            // (e.g., adding new fields or tables) without losing existing data.
+            // Apply pending migrations.
             context.Database.Migrate();
-
-            // If data already exists, stop here.
-            if (context.Users.Any())
-            {
-                return;
-            }
 
             // -----------------------------
             // Seed Users
             // -----------------------------
-            // Created with UserManager (not inserted directly) so passwords are
-            //  properly hashed and the normalized username/email fields Identity
-            //  relies on for login are populated correctly.
-            var users = new ApplicationUser[]
+            var users = new List<ApplicationUser>();
+
+            var existingGodfred = await userManager.FindByEmailAsync("gsefa@example.com");
+
+            if (existingGodfred == null)
             {
-                new ApplicationUser
+                existingGodfred = new ApplicationUser
                 {
                     FirstName = "Godfred",
                     LastName = "Aboagye",
                     UserName = "gsefa@example.com",
-                    Email = "gsefa@example.com",
-                },
+                    Email = "gsefa@example.com"
+                };
 
-                new ApplicationUser
+                var result = await userManager.CreateAsync(existingGodfred, TempPass);
+
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to seed user {existingGodfred.Email}: " +
+                        $"{string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+            }
+
+            users.Add(existingGodfred);
+
+            var existingKamohelo = await userManager.FindByEmailAsync("kamohelo@example.com");
+
+            if (existingKamohelo == null)
+            {
+                existingKamohelo = new ApplicationUser
                 {
                     FirstName = "Kamohelo",
                     LastName = "Mejaele",
                     UserName = "kamohelo@example.com",
-                    Email = "kamohelo@example.com",
-                }
-            };
+                    Email = "kamohelo@example.com"
+                };
 
-            foreach (var user in users)
-            {
-                var result = await userManager.CreateAsync(user, TempPass);
+                var result = await userManager.CreateAsync(existingKamohelo, TempPass);
+
                 if (!result.Succeeded)
                 {
-                    throw new InvalidOperationException($"Failed to seed user {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                    throw new InvalidOperationException(
+                        $"Failed to seed user {existingKamohelo.Email}: " +
+                        $"{string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
             }
+
+            users.Add(existingKamohelo);
 
             // -----------------------------
             // Seed Categories
             // -----------------------------
-            var categories = new Category[]
+            var categoryNames = new[]
             {
-                new Category { Name = "Breakfast" },
-                new Category { Name = "Lunch" },
-                new Category { Name = "Dinner" },
-                new Category { Name = "Dessert" }
+                "Breakfast",
+                "Lunch",
+                "Dinner",
+                "Dessert"
             };
 
-            context.Categories.AddRange(categories);
-            context.SaveChanges();
+            var categories = new Dictionary<string, Category>();
+
+            foreach (var categoryName in categoryNames)
+            {
+                var category = await context.Categories
+                    .FirstOrDefaultAsync(c => c.Name == categoryName);
+
+                if (category == null)
+                {
+                    category = new Category
+                    {
+                        Name = categoryName
+                    };
+
+                    context.Categories.Add(category);
+                    await context.SaveChangesAsync();
+                }
+
+                categories[categoryName] = category;
+            }
 
             // -----------------------------
             // Seed Recipes
             // -----------------------------
-            var recipes = new Recipe[]
+            var recipes = new List<Recipe>
             {
                 new Recipe
                 {
@@ -109,8 +118,8 @@ namespace ChefConnect.Data
                     CookingTime = 15,
                     Servings = 4,
                     ImageUrl = "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[0].Id,
-                    CategoryId = categories[0].Id
+                    UserId = existingGodfred.Id,
+                    CategoryId = categories["Breakfast"].Id
                 },
 
                 new Recipe
@@ -123,9 +132,10 @@ namespace ChefConnect.Data
                     CookingTime = 45,
                     Servings = 6,
                     ImageUrl = "https://images.unsplash.com/photo-1666190092689-e3968aa0c32c?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[1].Id,
-                    CategoryId = categories[2].Id
+                    UserId = existingKamohelo.Id,
+                    CategoryId = categories["Dinner"].Id
                 },
+
                 new Recipe
                 {
                     Name = "Penne Pasta with Meat Sauce",
@@ -136,9 +146,10 @@ namespace ChefConnect.Data
                     CookingTime = 30,
                     Servings = 6,
                     ImageUrl = "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[0].Id,
-                    CategoryId = categories[2].Id
+                    UserId = existingGodfred.Id,
+                    CategoryId = categories["Dinner"].Id
                 },
+
                 new Recipe
                 {
                     Name = "Grilled Chicken Salad",
@@ -149,35 +160,72 @@ namespace ChefConnect.Data
                     CookingTime = 25,
                     Servings = 6,
                     ImageUrl = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[1].Id,
-                    CategoryId = categories[1].Id
+                    UserId = existingKamohelo.Id,
+                    CategoryId = categories["Lunch"].Id
                 },
+
                 new Recipe
                 {
                     Name = "Glazed Salmon",
                     Description = "Salmon with a tangy citrus glaze.",
                     Ingredients = "Salmon, lemon, orange, sugar, salt, and pepper",
-                    Instructions = "Make glaze by mixing lemon, orange, sugar, salt and pepper.  Put salmon on grill and lightly coat with glaze. Add more glaze as needed.",
+                    Instructions = "Make glaze by mixing lemon, orange, sugar, salt and pepper. Put salmon on grill and lightly coat with glaze. Add more glaze as needed.",
                     PreparationTime = 15,
                     CookingTime = 30,
                     Servings = 6,
                     ImageUrl = "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[0].Id,
-                    CategoryId = categories[2].Id
+                    UserId = existingGodfred.Id,
+                    CategoryId = categories["Dinner"].Id
                 },
+
+                // -----------------------------
+                // Ewe Recipe 1
+                // -----------------------------
+                new Recipe
+                {
+                    Name = "Akple with Fetri Detsi",
+                    Description = "Traditional Ewe dish from Ghana's Volta Region, served with flavorful okra stew and fish.",
+                    Ingredients = "Corn flour, okra, tomatoes, onions, fresh pepper, palm oil, smoked fish, salt, water",
+                    Instructions = "Prepare the akple by mixing corn flour with water and cooking while stirring until smooth and firm. Prepare the fetri detsi by cooking okra with tomatoes, onions, pepper, palm oil, and smoked fish. Serve the akple with the okra stew.",
+                    PreparationTime = 20,
+                    CookingTime = 40,
+                    Servings = 4,
+                    ImageUrl = "",
+                    UserId = existingGodfred.Id,
+                    CategoryId = categories["Dinner"].Id
+                },
+
+                // -----------------------------
+                // Ewe Recipe 2
+                // -----------------------------
+                new Recipe
+                {
+                    Name = "Abɔlo with Pepper and Fish",
+                    Description = "Traditional Ewe-style fermented corn dumplings served with spicy pepper sauce and fish.",
+                    Ingredients = "Fermented corn dough, sugar, salt, water, fresh pepper, tomatoes, onions, smoked or fried fish",
+                    Instructions = "Mix fermented corn dough with water, sugar, and salt. Wrap portions in leaves and steam until firm. Prepare pepper sauce using pepper, tomatoes, and onions. Serve the abɔlo with the pepper sauce and fish.",
+                    PreparationTime = 20,
+                    CookingTime = 30,
+                    Servings = 4,
+                    ImageUrl = "",
+                    UserId = existingGodfred.Id,
+                    CategoryId = categories["Dinner"].Id
+                },
+
                 new Recipe
                 {
                     Name = "Chocolate Brownies",
                     Description = "Gooey chocolate brownies.",
                     Ingredients = "Sugar, flour, butter, eggs, cocoa powder, vanilla, baking powder, and salt",
-                    Instructions = "Whisk sugar, flour, melted butter, eggs, cocoa powder, vanilla, baking powder, and salt in a large bowl until combined.  Spread batter into a greased pan and cook at 350 degrees F for 25 minutes.",
+                    Instructions = "Whisk sugar, flour, melted butter, eggs, cocoa powder, vanilla, baking powder, and salt in a large bowl until combined. Spread batter into a greased pan and cook at 350 degrees F for 25 minutes.",
                     PreparationTime = 10,
                     CookingTime = 25,
                     Servings = 10,
                     ImageUrl = "https://images.unsplash.com/photo-1636743715220-d8f8dd900b87?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[0].Id,
-                    CategoryId = categories[3].Id
+                    UserId = existingGodfred.Id,
+                    CategoryId = categories["Dessert"].Id
                 },
+
                 new Recipe
                 {
                     Name = "Apple Pie",
@@ -188,39 +236,52 @@ namespace ChefConnect.Data
                     CookingTime = 50,
                     Servings = 8,
                     ImageUrl = "https://images.unsplash.com/photo-1628815871005-a860e5905628?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[1].Id,
-                    CategoryId = categories[3].Id
+                    UserId = existingKamohelo.Id,
+                    CategoryId = categories["Dessert"].Id
                 },
+
                 new Recipe
                 {
                     Name = "Belgian Waffles",
                     Description = "A yummy breakfast dish that is thick and crispy on the outside and fluffy on the inside.",
                     Ingredients = "Flour, sugar, baking powder, baking soda, salt, three large eggs, milk, melted butter, vanilla extract, cinnamon, and nutmeg",
-                    Instructions = "In a large bowl, whisk together flour, cornstarch, sugar, baking powder, baking soda, and salt until evenly combined.  In another bowl, whisk the egg yolks with milk, melted butter, and vanilla extract until smooth.  Pour the wet mixture into the dry ingredients and stir gently until just combined. The batter should remain slightly lumpy to avoid overmixing. Pour the batter into the hot waffle iron (about ¾ cup per waffle, depending on size) and cook until golden brown and crisp, usually 4-5 minutes.",
+                    Instructions = "In a large bowl, whisk together flour, cornstarch, sugar, baking powder, baking soda, and salt until evenly combined. In another bowl, whisk the egg yolks with milk, melted butter, and vanilla extract until smooth. Pour the wet mixture into the dry ingredients and stir gently until just combined. Pour the batter into the hot waffle iron and cook until golden brown and crisp.",
                     PreparationTime = 15,
                     CookingTime = 5,
                     Servings = 12,
                     ImageUrl = "https://images.unsplash.com/photo-1568051243851-f9b136146e97?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[0].Id,
-                    CategoryId = categories[0].Id
+                    UserId = existingGodfred.Id,
+                    CategoryId = categories["Breakfast"].Id
                 },
+
                 new Recipe
                 {
                     Name = "Rotini pasta salad",
                     Description = "A savory tomato-based sauce mixed with rotini pasta noodles.",
                     Ingredients = "Rotini pasta, tomato sauce and sliced tomatoes",
-                    Instructions = "Cook pasta and then mix with tomato sauce.  Top with sliced tomatoes.",
+                    Instructions = "Cook pasta and then mix with tomato sauce. Top with sliced tomatoes.",
                     PreparationTime = 15,
                     CookingTime = 5,
                     Servings = 12,
                     ImageUrl = "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=500&auto=format&fit=crop&q=60",
-                    UserId = users[1].Id,
-                    CategoryId = categories[1].Id
+                    UserId = existingKamohelo.Id,
+                    CategoryId = categories["Lunch"].Id
                 }
             };
 
-            context.Recipes.AddRange(recipes);
-            context.SaveChanges();
+            // Only add recipes that do not already exist.
+            foreach (var recipe in recipes)
+            {
+                var exists = await context.Recipes
+                    .AnyAsync(r => r.Name == recipe.Name);
+
+                if (!exists)
+                {
+                    context.Recipes.Add(recipe);
+                }
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 }

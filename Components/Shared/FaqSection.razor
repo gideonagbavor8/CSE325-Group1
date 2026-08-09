@@ -1,0 +1,371 @@
+@*
+===========================================================
+ChefConnect - Frequently Asked Questions
+
+Purpose:
+Provides in-app help for people using ChefConnect. The
+questions cover the problems users run into most often:
+creating recipes, adding images, searching, favorites,
+signing in, and general troubleshooting.
+
+Selecting a question opens its answer in a modal. The modal
+closes with the Close button, the Escape key, or by clicking
+the shaded area outside it.
+===========================================================
+*@
+
+<section class="faq-section" aria-labelledby="faq-heading">
+
+    <div class="faq-intro">
+
+        <h2 id="faq-heading" class="faq-heading">
+            Frequently asked questions
+        </h2>
+
+        <p class="faq-lead">
+            Answers to the questions people ask most while using
+            ChefConnect. Select a question to read the answer.
+        </p>
+
+    </div>
+
+    <div class="faq-groups">
+
+        @foreach (var group in faqGroups)
+        {
+            <div class="faq-group">
+
+                <h3 class="faq-group-title">
+                    <i class="bi @group.Icon" aria-hidden="true"></i>
+                    @group.Title
+                </h3>
+
+                <ul class="faq-list">
+
+                    @foreach (var entry in group.Entries)
+                    {
+                        <li>
+                            <button type="button"
+                                    class="faq-question"
+                                    aria-haspopup="dialog"
+                                    @onclick="() => OpenAnswer(entry)">
+
+                                <span class="faq-question-text">
+                                    @entry.Question
+                                </span>
+
+                                <i class="bi bi-chevron-right faq-question-icon"
+                                   aria-hidden="true"></i>
+
+                            </button>
+                        </li>
+                    }
+
+                </ul>
+
+            </div>
+        }
+
+    </div>
+
+</section>
+
+@if (selectedEntry is not null)
+{
+    <!--
+    The shaded backdrop closes the modal when it is selected.
+    Selections inside the dialog stop there so the modal stays
+    open while the answer is being read.
+    -->
+    <div class="faq-modal-backdrop"
+         @onclick="CloseAnswer">
+
+        <div class="faq-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="faq-modal-title"
+             tabindex="-1"
+             @ref="modalElement"
+             @onkeydown="HandleKeyDown"
+             @onclick:stopPropagation="true">
+
+            <div class="faq-modal-header">
+
+                <h3 id="faq-modal-title" class="faq-modal-title">
+                    @selectedEntry.Question
+                </h3>
+
+                <button type="button"
+                        class="faq-modal-close"
+                        aria-label="Close answer"
+                        @onclick="CloseAnswer">
+
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+
+                </button>
+
+            </div>
+
+            <div class="faq-modal-body">
+
+                <p class="faq-modal-answer">
+                    @selectedEntry.Answer
+                </p>
+
+                @if (selectedEntry.Steps is not null)
+                {
+                    <ol class="faq-modal-steps">
+                        @foreach (var step in selectedEntry.Steps)
+                        {
+                            <li>@step</li>
+                        }
+                    </ol>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(selectedEntry.Tip))
+                {
+                    <p class="faq-modal-tip">
+                        <i class="bi bi-lightbulb" aria-hidden="true"></i>
+                        <span>@selectedEntry.Tip</span>
+                    </p>
+                }
+
+            </div>
+
+            <div class="faq-modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        @onclick="CloseAnswer">
+
+                    Close
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code
+{
+    /// <summary>
+    /// A single question and its answer.
+    /// </summary>
+    /// <param name="Question">The question as a user would ask it.</param>
+    /// <param name="Answer">A short, plain-language answer.</param>
+    /// <param name="Steps">Optional numbered steps to follow.</param>
+    /// <param name="Tip">Optional extra note shown below the answer.</param>
+    private sealed record FaqEntry(
+        string Question,
+        string Answer,
+        string[]? Steps = null,
+        string? Tip = null);
+
+    /// <summary>
+    /// A themed set of questions.
+    /// </summary>
+    private sealed record FaqGroup(
+        string Title,
+        string Icon,
+        FaqEntry[] Entries);
+
+    // The question whose answer is currently open, if any.
+    private FaqEntry? selectedEntry;
+
+    // Reference to the modal so it can be focused when it opens.
+    private ElementReference modalElement;
+
+    // Set when a newly opened modal still needs to take focus.
+    private bool shouldFocusModal;
+
+    /// <summary>
+    /// Opens the answer for the selected question.
+    /// </summary>
+    private void OpenAnswer(FaqEntry entry)
+    {
+        selectedEntry = entry;
+        shouldFocusModal = true;
+    }
+
+    /// <summary>
+    /// Closes the answer modal.
+    /// </summary>
+    private void CloseAnswer()
+    {
+        selectedEntry = null;
+        shouldFocusModal = false;
+    }
+
+    /// <summary>
+    /// Closes the modal when the Escape key is pressed.
+    /// </summary>
+    private void HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            CloseAnswer();
+        }
+    }
+
+    /// <summary>
+    /// Moves keyboard focus into the modal once it is displayed so
+    /// the Escape key works without selecting the modal first.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!shouldFocusModal || selectedEntry is null)
+        {
+            return;
+        }
+
+        shouldFocusModal = false;
+
+        await modalElement.FocusAsync();
+    }
+
+    // =====================================================
+    // Content
+    // =====================================================
+
+    private readonly FaqGroup[] faqGroups = new[]
+    {
+        new FaqGroup(
+            "Account and sign in",
+            "bi-person-circle",
+            new[]
+            {
+                new FaqEntry(
+                    "How do I register for ChefConnect?",
+                    "Select Register at the top of the page and fill in your name, email address, and a password. You are signed in automatically once the account is created.",
+                    Steps: new[]
+                    {
+                        "Select Register in the navigation bar.",
+                        "Enter your first name, last name, and email address.",
+                        "Choose a password and type it again to confirm it.",
+                        "Select Register to finish."
+                    },
+                    Tip: "Your password needs at least 6 characters and must include an uppercase letter, a lowercase letter, a number, and a symbol such as ! or ?."),
+
+                new FaqEntry(
+                    "What should I do if I cannot log in?",
+                    "Check that you are using the same email address you registered with, and remember that passwords are case sensitive. If you have not created an account yet, select Register instead of Login.",
+                    Tip: "After several failed attempts an account is locked for a short time as a security measure. Wait a few minutes and try again. ChefConnect does not have a password reset page yet, so contact the ChefConnect team if you cannot remember your password.")
+            }),
+
+        new FaqGroup(
+            "Creating and managing recipes",
+            "bi-journal-text",
+            new[]
+            {
+                new FaqEntry(
+                    "How do I create a recipe?",
+                    "Sign in, open Recipes in the navigation bar, and select Create Recipe. Fill in the form and select Save Recipe.",
+                    Steps: new[]
+                    {
+                        "Sign in to your ChefConnect account.",
+                        "Select Recipes, then Create Recipe.",
+                        "Enter the name, description, category, ingredients, and instructions.",
+                        "Enter the preparation time, cooking time, and servings.",
+                        "Add an image if you would like one, then select Save Recipe."
+                    }),
+
+                new FaqEntry(
+                    "Why can't I create a recipe?",
+                    "Only signed-in users can create recipes. The Recipes link appears in the navigation bar once you are signed in, and the Create Recipe page saves nothing while you are signed out.",
+                    Tip: "If the Save Recipe button seems to do nothing, your sign-in has most likely expired. Sign in again and your details will still be on the form."),
+
+                new FaqEntry(
+                    "Why can't I save a recipe?",
+                    "Every recipe needs a name, description, category, ingredients, and instructions, and the times and servings must be within the allowed range. Any field that is missing or out of range is listed in red at the top of the form.",
+                    Steps: new[]
+                    {
+                        "Choose a real category. Leaving the box on \"Select Category...\" stops the recipe from being saved.",
+                        "Keep the recipe name to 150 characters or fewer.",
+                        "Enter a preparation time and cooking time between 1 and 1000 minutes.",
+                        "Enter servings between 1 and 100."
+                    }),
+
+                new FaqEntry(
+                    "Why are my recipe instructions being rejected?",
+                    "The instructions box cannot be left empty, and spaces on their own do not count as instructions. Type at least one real step and the message disappears.",
+                    Tip: "There is no length limit on instructions, so feel free to write each step on its own line."),
+
+                new FaqEntry(
+                    "How do I edit or delete my recipe?",
+                    "Open the recipe and use the Edit or Delete buttons. These buttons only appear on recipes you created, because you cannot change someone else's recipe.",
+                    Tip: "Deleting asks you to confirm first, and a deleted recipe cannot be recovered.")
+            }),
+
+        new FaqGroup(
+            "Recipe images",
+            "bi-image",
+            new[]
+            {
+                new FaqEntry(
+                    "How do I add an image to my recipe?",
+                    "The create and edit forms have a Recipe Image section with two options: upload a picture from your device, or paste a link to a picture that is already online. You only need one of them, and a recipe can be saved without any image at all.",
+                    Tip: "A preview appears once your image is chosen, so you can check it before saving."),
+
+                new FaqEntry(
+                    "Can I upload an image from my computer?",
+                    "Yes. Select Choose File under \"Upload from your computer\" and pick a picture from your device or phone.",
+                    Tip: "Uploads must be JPG, JPEG, PNG, or WEBP files of 5 MB or less. Anything else is refused with a message explaining why, so try a different picture or save a smaller copy."),
+
+                new FaqEntry(
+                    "Can I use an image URL instead?",
+                    "Yes. Paste the web address of a picture into the Image URL box. The address has to start with http:// or https:// and point directly at an image file.",
+                    Tip: "If you fill in both options, the picture you uploaded is the one that gets saved.")
+            }),
+
+        new FaqGroup(
+            "Finding and saving recipes",
+            "bi-search",
+            new[]
+            {
+                new FaqEntry(
+                    "Why can't I find a recipe when I search for it?",
+                    "The home page search looks at recipe names and category names only, so searching for an ingredient will not find a recipe. Check the spelling, try a shorter word, and make sure the Category box is set to All categories.",
+                    Tip: "Favoriting a recipe never hides it. Favorites change the heart only, not the search results."),
+
+                new FaqEntry(
+                    "How do I favorite a recipe?",
+                    "Sign in, then select the heart in the corner of a recipe card on the home page, or use the Favorite button on the recipe's own page. Select it again to remove the favorite.",
+                    Tip: "The heart is filled in and red once a recipe is one of your favorites. Hearts are hidden while you are signed out."),
+
+                new FaqEntry(
+                    "Where can I find my favorite recipes?",
+                    "Your favorites are marked with a filled red heart on the home page, so you can spot them as you browse. ChefConnect does not have a separate favorites page yet, so this is where to look for now.",
+                    Tip: "Favorites are saved to your account, so they are still there the next time you sign in."),
+
+                new FaqEntry(
+                    "How do I plan meals?",
+                    "ChefConnect does not include a meal planner yet. In the meantime you can plan a week by filtering the home page by category, such as Breakfast, Lunch, Dinner, or Dessert, and favoriting the recipes you intend to cook.",
+                    Tip: "Each recipe page lists preparation time, cooking time, and servings, which makes it easier to pick recipes that fit the time you have.")
+            }),
+
+        new FaqGroup(
+            "Troubleshooting",
+            "bi-tools",
+            new[]
+            {
+                new FaqEntry(
+                    "What should I do if something is not loading?",
+                    "A brief \"Loading recipes...\" message is normal while the page fetches information. If it stays on screen, or if a message appears saying the connection was lost, refresh the page in your browser.",
+                    Tip: "ChefConnect needs a live connection to the server, so a weak or interrupted network is the usual cause."),
+
+                new FaqEntry(
+                    "What should I do if I encounter an unexpected error?",
+                    "Refresh the page and try the same action once more, as most errors are temporary. If it happens again, return to the home page and continue from there.",
+                    Steps: new[]
+                    {
+                        "Refresh the page in your browser.",
+                        "Sign in again if you were signed out.",
+                        "Note what you were doing and what the message said.",
+                        "Send those details to the ChefConnect team so it can be fixed."
+                    })
+            })
+    };
+}

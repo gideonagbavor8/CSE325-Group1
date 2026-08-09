@@ -1,0 +1,161 @@
+@*
+===========================================================
+ChefConnect - Confirmation Dialog
+
+Purpose:
+Shows an alert in a modal window and waits for the user to
+confirm or cancel. Used before destructive actions such as
+deleting a recipe.
+
+The dialog closes when Cancel is selected, when the Escape
+key is pressed, or when the shaded area outside it is
+selected. Confirming is always a deliberate choice.
+===========================================================
+*@
+
+@if (IsOpen)
+{
+    <div class="confirm-backdrop"
+         @onclick="Cancel">
+
+        <div class="confirm-dialog"
+             role="alertdialog"
+             aria-modal="true"
+             aria-labelledby="confirm-dialog-title"
+             aria-describedby="confirm-dialog-message"
+             tabindex="-1"
+             @ref="dialogElement"
+             @onkeydown="HandleKeyDown"
+             @onclick:stopPropagation="true">
+
+            <div class="confirm-icon" aria-hidden="true">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+
+            <h2 id="confirm-dialog-title" class="confirm-title">
+                @Title
+            </h2>
+
+            <p id="confirm-dialog-message" class="confirm-message">
+                @Message
+            </p>
+
+            <div class="confirm-actions">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        @onclick="Cancel">
+
+                    @CancelText
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-danger"
+                        @onclick="Confirm">
+
+                    @ConfirmText
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code
+{
+    /// <summary>
+    /// Whether the dialog is currently displayed.
+    /// </summary>
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    /// <summary>
+    /// Short heading, for example "Delete this recipe?".
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "Are you sure?";
+
+    /// <summary>
+    /// Explains what happens if the action is confirmed.
+    /// </summary>
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Label of the button that carries out the action.
+    /// </summary>
+    [Parameter]
+    public string ConfirmText { get; set; } = "Delete";
+
+    /// <summary>
+    /// Label of the button that closes the dialog.
+    /// </summary>
+    [Parameter]
+    public string CancelText { get; set; } = "Cancel";
+
+    /// <summary>
+    /// Raised when the user confirms the action.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    /// <summary>
+    /// Raised when the user cancels or dismisses the dialog.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    // Reference used to move focus into the dialog when it opens.
+    private ElementReference dialogElement;
+
+    // Tracks the previous state so focus is only set once per open.
+    private bool wasOpen;
+
+    private async Task Confirm()
+    {
+        if (OnConfirm.HasDelegate)
+        {
+            await OnConfirm.InvokeAsync();
+        }
+    }
+
+    private async Task Cancel()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Closes the dialog when the Escape key is pressed.
+    /// </summary>
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            await Cancel();
+        }
+    }
+
+    /// <summary>
+    /// Gives the dialog keyboard focus the moment it appears.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsOpen && !wasOpen)
+        {
+            wasOpen = true;
+
+            await dialogElement.FocusAsync();
+        }
+        else if (!IsOpen)
+        {
+            wasOpen = false;
+        }
+    }
+}
