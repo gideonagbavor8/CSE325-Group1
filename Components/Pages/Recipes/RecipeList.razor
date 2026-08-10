@@ -14,7 +14,7 @@
 ChefConnect - Recipe List
 
 Purpose:
-Displays all recipes available in ChefConnect and provides
+Displays user recipes in ChefConnect and provides
 options to view, edit, create, and delete recipes.
 
 The delete operation uses a two-step confirmation process
@@ -32,7 +32,7 @@ to help prevent accidental deletion of recipes.
             <h1>Recipes</h1>
 
             <p>
-                Browse and manage recipes in ChefConnect.
+                Browse and manage your recipes in ChefConnect.
             </p>
         </div>
 
@@ -215,20 +215,21 @@ and clears itself after a few seconds.
 
     /// <summary>
     /// Loads recipes and the current user when the page opens.
+    /// Redirects unauthenticated users to home page.
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
-        await LoadRecipesAsync();
-
-        // The current user decides which recipes offer Edit and
-        // Delete. Signed-out visitors can browse, and nothing more.
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        if (user.Identity?.IsAuthenticated ?? false)
+        if (!(user.Identity?.IsAuthenticated ?? false))
         {
-            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            NavigationManager.NavigateTo("/");
+            return;
         }
+
+        userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        await LoadRecipesAsync();
     }
 
     /// <summary>
@@ -241,11 +242,18 @@ and clears itself after a few seconds.
     }
 
     /// <summary>
-    /// Retrieves the latest recipe list from the database.
+    /// Retrieves the latest user recipe list from the database.
     /// </summary>
     private async Task LoadRecipesAsync()
     {
-        recipes = await RecipeService.GetAllRecipesAsync();
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            recipes = await RecipeService.GetRecipesByUserAsync(userId);
+        }
+        else
+        {
+            recipes = new List<Recipe>();
+        }
     }
 
     /// <summary>
