@@ -47,7 +47,7 @@ recipes belonging to another user.
                 The recipe you are looking for could not be found.
             </p>
 
-            <a href="/recipes"
+            <a href="@(isAuthenticated ? "/recipes" : "/")"
                class="btn btn-secondary">
 
                 <i class="bi bi-arrow-left me-1"
@@ -208,7 +208,7 @@ recipes belonging to another user.
                     </button>
                 }
 
-                <a href="/recipes"
+                <a href="@(isAuthenticated ? "/recipes" : "/")"
                    class="btn btn-secondary">
 
                     <i class="bi bi-arrow-left me-1"
