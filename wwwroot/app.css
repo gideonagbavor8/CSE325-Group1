@@ -168,7 +168,7 @@ header {
 }
 
 .navbar-item.active {
-  color: var(--coral);
+  color: black;
 }
 
 .site-footer {
@@ -191,12 +191,13 @@ header {
 .footer-brand {
   font-weight: 600;
   font-size: 1.1rem;
-  color: var(--coral);
+  color: black;
 }
 
 .footer-copy {
   font-size: 0.9rem;
   opacity: 0.8;
+  color: black;
 }
 
 /* Search and category filter panel on the home page */
@@ -1120,7 +1121,7 @@ keeps working before the page becomes interactive.
 /* Current section */
 .navbar-item.active,
 .navbar-item[aria-current="page"] {
-  color: var(--coral);
+  color: black;
   font-weight: 600;
 }
 
@@ -1137,7 +1138,7 @@ keeps working before the page becomes interactive.
   padding: 0.45rem 1rem;
   font-size: 1.05rem;
   font-weight: 600;
-  color: #fff;
+  color: black;
   background: var(--coral);
   border-radius: 999px;
   text-decoration: none;
