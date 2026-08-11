@@ -49,7 +49,7 @@ grows into multiple columns on larger screens.
 }
 
 .faq-group-title i {
-  color: var(--coral);
+  color: var(--coral-accessible);
 }
 
 .faq-list {
@@ -97,7 +97,7 @@ grows into multiple columns on larger screens.
 
 .faq-question-icon {
   flex-shrink: 0;
-  color: var(--coral);
+  color: var(--coral-accessible);
   transition: transform 0.15s ease;
 }
 
@@ -209,7 +209,7 @@ grows into multiple columns on larger screens.
 }
 
 .faq-modal-tip i {
-  color: #c99700;
+  color: #7a5c00;
 }
 
 .faq-modal-footer {

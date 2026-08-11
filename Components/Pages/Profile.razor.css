@@ -29,7 +29,7 @@
   font-size: 1.5rem;
 
   color: white;
-  background: var(--coral, #ee6055);
+  background: var(--coral-accessible, #c0392b);
 }
 
 .profile-header h1 {
@@ -67,8 +67,8 @@
 .profile-tab.active {
   font-weight: 600;
 
-  color: var(--coral, #ee6055);
-  border-bottom-color: var(--coral, #ee6055);
+  color: var(--coral-accessible, #c0392b);
+  border-bottom-color: var(--coral-accessible, #c0392b);
 }
 
 .recipe-grid {
