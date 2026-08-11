@@ -1,5 +1,9 @@
 :root {
   --coral: #ee6055;
+  /* Same red, darkened to meet WCAG AA contrast. Use this whenever
+     the colour carries text, either as the text or behind it.
+     --coral stays for borders and other decoration. */
+  --coral-accessible: #c0392b;
   --green: #60d394;
   --light-green: #aaf683;
   --sun-yellow: #ffd97d;
@@ -143,7 +147,7 @@ header {
 }
 
 .chefconnect-logo:hover .chefconnect-logo-text {
-  color: var(--coral); /* coral accent on hover */
+  color: var(--coral-accessible); /* coral accent on hover */
 }
 
 .navbar {
@@ -164,7 +168,7 @@ header {
 }
 
 .navbar-item:hover {
-  color: var(--coral);
+  color: var(--coral-accessible);
 }
 
 .navbar-item.active {
@@ -723,7 +727,7 @@ well as it does on a desktop.
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
-  color: #b6aca3;
+  color: #5c5c5c;
   background: #f7f4f1;
 }
 
@@ -741,7 +745,7 @@ well as it does on a desktop.
 }
 
 .recipe-row-name:hover {
-  color: var(--coral);
+  color: var(--coral-accessible);
 }
 
 .recipe-row-meta {
@@ -805,7 +809,7 @@ Recipe detail page (/recipes/{id})
   height: 220px;
   margin-bottom: 1rem;
   font-size: 2rem;
-  color: #b6aca3;
+  color: #5c5c5c;
   background: #f7f4f1;
   border-radius: 10px;
 }
@@ -1114,7 +1118,7 @@ keeps working before the page becomes interactive.
 
 .navbar-item:hover,
 .navbar-item:focus-visible {
-  color: var(--coral);
+  color: var(--coral-accessible);
   background: rgba(255, 255, 255, 0.45);
 }
 
@@ -1151,7 +1155,9 @@ keeps working before the page becomes interactive.
 
 .nav-cta:hover,
 .nav-cta:focus-visible {
-  color: #fff;
+  /* Text stays black. White on this background is only 3.3:1,
+     which fails the contrast requirement. */
+  color: black;
   filter: brightness(1.06);
   box-shadow: 0 4px 12px rgba(238, 96, 85, 0.35);
   transform: translateY(-1px);
@@ -1195,7 +1201,7 @@ keeps working before the page becomes interactive.
   height: 2.1rem;
   font-weight: 600;
   color: #fff;
-  background: var(--coral);
+  background: var(--coral-accessible);
   border-radius: 50%;
 }
 
@@ -1255,7 +1261,7 @@ keeps working before the page becomes interactive.
 
 .account-link:hover,
 .account-link:focus-visible {
-  color: var(--coral);
+  color: var(--coral-accessible);
   background: #faf6f2;
 }
 
