@@ -22,6 +22,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using ChefConnect.Components.Account;
 using ChefConnect.Services;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.FileProviders;
 using System.Linq.Expressions;
 
@@ -44,6 +45,25 @@ builder.Services.AddScoped<RecipeService>();
 // 1. Add Database Connection (SQLite)
 var defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Data Source=app.db";
+
+//
+// When hosted, the database file is kept outside the application
+// folder so that it survives a redeployment. SQLite creates the
+// file it is pointed at, but not the folder holding it, so the
+// folder is created here before Entity Framework opens it.
+//
+var sqliteDataSource = new SqliteConnectionStringBuilder(defaultConnectionString).DataSource;
+
+if (!string.IsNullOrWhiteSpace(sqliteDataSource))
+{
+    var databaseDirectory = Path.GetDirectoryName(Path.GetFullPath(sqliteDataSource));
+
+    if (!string.IsNullOrEmpty(databaseDirectory))
+    {
+        Directory.CreateDirectory(databaseDirectory);
+    }
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(defaultConnectionString));
 
@@ -128,6 +148,12 @@ app.MapStaticAssets();
 // displayed immediately without restarting the application.
 // ===========================================================
 //
+// When hosted, RecipeImages:StoragePath points at a folder that
+// survives redeployment. Locally the setting is absent and images
+// stay in wwwroot as before.
+RecipeImageService.UseStorageDirectory(
+    builder.Configuration["RecipeImages:StoragePath"]);
+
 var recipeUploadsPath = RecipeImageService.EnsureUploadsDirectory(app.Environment);
 
 app.UseStaticFiles(new StaticFileOptions
