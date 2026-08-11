@@ -437,3 +437,10 @@ FodyWeavers.xsd
 
 # Recipe images uploaded by users at runtime
 wwwroot/uploads/
+
+# Azure deployment artifacts
+publish/
+publish.zip
+logs/
+logs2/
+logs*.zip

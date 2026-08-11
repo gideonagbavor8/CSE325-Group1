@@ -1,0 +1,37 @@
+<!--
+  ===========================================================
+  ChefConnect - Automated Tests
+
+  Purpose:
+  Verifies the behaviour of the application's services and
+  Razor components.
+
+  The tests render the real components with bUnit against an
+  in-memory SQLite database, so they exercise the same code
+  paths the application uses at run time.
+
+  This project is not part of the deployed application. The
+  published output is produced from ChefConnect.csproj only.
+  ===========================================================
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="bunit" Version="1.40.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ChefConnect.csproj" />
+  </ItemGroup>
+
+</Project>

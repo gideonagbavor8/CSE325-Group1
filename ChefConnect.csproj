@@ -6,6 +6,19 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+
+    <!--
+      The Web SDK includes every file below this folder by default.
+      These folders must be excluded from that:
+
+        Tests   - a separate test project, compiled on its own
+        publish - deployment output, which otherwise gets picked up
+                  again on the next build
+        logs    - logs downloaded from Azure while troubleshooting
+
+      Without this the build fails with duplicate or unresolved types.
+    -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Tests/**;publish/**;logs/**;logs2/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

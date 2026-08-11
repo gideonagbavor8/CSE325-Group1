@@ -54,6 +54,10 @@ public static class RecipeImageService
     private const string UploadsRootFolder = "uploads";
     private const string UploadsRecipesFolder = "recipes";
 
+    // Optional folder used instead of wwwroot when the application
+    // is hosted. It is set once at startup and never changes.
+    private static string? configuredStorageDirectory;
+
     /// <summary>
     /// File extensions accepted for uploaded recipe images.
     /// </summary>
@@ -216,6 +220,25 @@ public static class RecipeImageService
     // =========================================================
 
     /// <summary>
+    /// Sets the folder that uploaded images are written to.
+    ///
+    /// This is called once at startup. When the application is
+    /// hosted, the folder is outside the deployed application so
+    /// that images are not lost each time the site is redeployed.
+    /// An empty value keeps the default wwwroot location, which is
+    /// what happens when running locally.
+    /// </summary>
+    /// <param name="absolutePath">
+    /// Absolute path of the folder holding recipe images.
+    /// </param>
+    public static void UseStorageDirectory(string? absolutePath)
+    {
+        configuredStorageDirectory = string.IsNullOrWhiteSpace(absolutePath)
+            ? null
+            : absolutePath.Trim();
+    }
+
+    /// <summary>
     /// Returns the physical uploads folder and creates it when it
     /// does not exist yet.
     /// </summary>
@@ -224,14 +247,23 @@ public static class RecipeImageService
     {
         ArgumentNullException.ThrowIfNull(environment);
 
-        var webRootPath = string.IsNullOrWhiteSpace(environment.WebRootPath)
-            ? Path.Combine(environment.ContentRootPath, "wwwroot")
-            : environment.WebRootPath;
+        string uploadsDirectory;
 
-        var uploadsDirectory = Path.Combine(
-            webRootPath,
-            UploadsRootFolder,
-            UploadsRecipesFolder);
+        if (configuredStorageDirectory is not null)
+        {
+            uploadsDirectory = configuredStorageDirectory;
+        }
+        else
+        {
+            var webRootPath = string.IsNullOrWhiteSpace(environment.WebRootPath)
+                ? Path.Combine(environment.ContentRootPath, "wwwroot")
+                : environment.WebRootPath;
+
+            uploadsDirectory = Path.Combine(
+                webRootPath,
+                UploadsRootFolder,
+                UploadsRecipesFolder);
+        }
 
         Directory.CreateDirectory(uploadsDirectory);
 
